@@ -10,6 +10,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { exampleBackup } from "../src/data/backup";
 
 const origin = "http://127.0.0.1:4173";
+const browserChannel = process.env.CI ? undefined : "msedge";
 const test = base.extend<{ ledgerPage: Page; ledgerContext: BrowserContext }>({
   ledgerContext: async ({ playwright }, use, info) => {
     const profileRoot = path.resolve(process.cwd(), ".cache", "browser");
@@ -18,7 +19,7 @@ const test = base.extend<{ ledgerPage: Page; ledgerContext: BrowserContext }>({
       `test-${info.testId}-${crypto.randomUUID()}`,
     );
     const context = await playwright.chromium.launchPersistentContext(profile, {
-      channel: "msedge",
+      ...(browserChannel ? { channel: browserChannel } : {}),
       headless: true,
       viewport: { width: 1440, height: 1000 },
       locale: "id-ID",
@@ -369,7 +370,7 @@ base("catatan bertahan setelah browser ditutup dan dibuka ulang", async () => {
   const root = path.resolve(process.cwd(), ".cache", "browser");
   const profile = path.join(root, `restart-${crypto.randomUUID()}`);
   let context = await chromium.launchPersistentContext(profile, {
-    channel: "msedge",
+    ...(browserChannel ? { channel: browserChannel } : {}),
     headless: true,
   });
   try {
@@ -379,7 +380,7 @@ base("catatan bertahan setelah browser ditutup dan dibuka ulang", async () => {
     await add(page, "125000", "Tetap ada setelah browser ditutup", true);
     await context.close();
     context = await chromium.launchPersistentContext(profile, {
-      channel: "msedge",
+      ...(browserChannel ? { channel: browserChannel } : {}),
       headless: true,
     });
     page = await context.newPage();
