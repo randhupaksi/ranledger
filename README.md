@@ -86,6 +86,12 @@ npm run format:check
 
 Playwright menggunakan Microsoft Edge yang terpasang (`channel: msedge`) dalam profil uji terisolasi di `.cache/browser`. Data asli pada browser biasa tidak digunakan. Server preview dimulai otomatis di port 4173; port tersebut harus kosong. Untuk lingkungan tanpa Edge, pasang browser yang sesuai dan ubah channel pada fixture pengujian.
 
+## CI dan deployment
+
+GitHub Actions menjalankan lint, pemeriksaan format, unit test, build TypeScript/Vite, lalu browser test untuk setiap pull request ke `main`, push ke `main`, dan pemicu manual. Runner CI memasang Chromium untuk Playwright; pengembangan lokal tetap memakai Microsoft Edge bila tersedia.
+
+Vercel menangani deployment otomatis setelah repository Ranledger dihubungkan melalui Git Integration. Setiap perubahan pada `main` akan membangun `dist` dengan Node 24 dan menerbitkan versi produksi. Pull request akan menerima preview deployment. File `vercel.json` menyediakan fallback SPA, header keamanan yang setara dengan hosting lain, dan cache panjang untuk aset build yang memiliki hash.
+
 Pengujian meliputi perhitungan setelah edit/hapus, tanggal lintas periode, 10.000 transaksi, roundtrip JSON/Excel, catatan berkarakter khusus, file tidak kompatibel/rusak, duplikasi, rollback kegagalan impor, konflik antar-tab, kategori arsip, browser dibuka ulang, tampilan mobile/desktop, tema, keyboard, dan offline. Screenshot browser tersimpan di `.cache/screenshots` untuk review visual; semua artefak uji diabaikan Git.
 
 Node 23.8 di mesin pengembangan berada di luar rentang dukungan project/Vitest, walaupun perintah validasi saat implementasi dapat berjalan. Gunakan Node 24 LTS untuk pengembangan rutin dan CI. `.npmrc` mempertahankan `legacy-peer-deps=true` karena resolver npm 11.1 bermasalah pada peer opsional Vitest; dependency aplikasi dipasang eksplisit.
