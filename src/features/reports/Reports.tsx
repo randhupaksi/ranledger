@@ -24,6 +24,8 @@ import {
   totals,
 } from "../../domain/ledger";
 import type { DateRange, Transaction } from "../../domain/ledger";
+import { WalletPicker, ProgressMeter } from "../../components/planning-ui";
+import { budgetProgresses, monthLabel } from "../../domain/planning";
 
 function chartBuckets(transactions: Transaction[], range: DateRange) {
   if (!transactions.length) return [];
@@ -140,7 +142,8 @@ function CashflowChart({
 export default function Reports() {
   const ledger = useLedger();
   const notify = useNotify();
-  const { period, range, update, label } = usePeriod();
+  const { period, range, update, label, params } = usePeriod();
+  const walletId = params.get("wallet") ?? "";
   const navigate = useNavigate();
   const [exporting, setExporting] = useState(false);
   const filtered = useMemo(
@@ -150,8 +153,9 @@ export default function Reports() {
         kind: "all",
         categoryId: "",
         search: "",
+        walletId,
       }),
-    [ledger.transactions, ledger.categories, range.start, range.end],
+    [ledger.transactions, ledger.categories, range.start, range.end, walletId],
   );
   const summary = useMemo(() => totals(filtered), [filtered]);
   const hidden = ledger.preferences.hideAmounts;
@@ -163,6 +167,7 @@ export default function Reports() {
     period,
     start: range.start,
     end: range.end,
+    wallet: walletId,
   });
   const comparison = useMemo(() => {
     const startDate = new Date(`${range.start}T12:00:00`);
@@ -194,6 +199,7 @@ export default function Reports() {
             kind: "all",
             categoryId: "",
             search: "",
+            walletId,
           });
     const previousExpense = totals(previous).expense;
     return {
@@ -212,13 +218,33 @@ export default function Reports() {
     range.start,
     range.end,
     summary.expense,
+    walletId,
   ]);
+  const budgets = useMemo(
+    () =>
+      period === "month"
+        ? ledger.budgets.filter(
+            (b) =>
+              b.month === range.start.slice(0, 7) &&
+              (walletId ? b.walletId === walletId : true),
+          )
+        : [],
+    [ledger.budgets, period, range.start, walletId],
+  );
+  const budgetUsage = useMemo(
+    () => budgetProgresses(budgets, ledger),
+    [budgets, ledger.transactions],
+  );
   async function download() {
     if (exporting) return;
     setExporting(true);
     try {
       const { exportReport } = await import("../../data/backup");
-      await exportReport(filtered, ledger, label);
+      await exportReport(
+        filtered,
+        ledger,
+        `${label} · ${ledger.wallets.find((w) => w.id === walletId)?.name ?? "Semua dompet"}`,
+      );
       notify("Laporan Excel dibuat sesuai periode.");
     } catch (e) {
       notify(errorMessage(e), true);
@@ -248,7 +274,15 @@ export default function Reports() {
           <h2>Ringkasan arus kas</h2>
           <p>{label}</p>
         </div>
-        <PeriodPicker period={period} range={range} onChange={update} />
+        <div className="report-filters">
+          <WalletPicker
+            label="Dompet laporan"
+            value={walletId}
+            onChange={(v) => update({ wallet: v })}
+            all
+          />
+          <PeriodPicker period={period} range={range} onChange={update} />
+        </div>
       </div>
       <section className="period-summary report-summary">
         <Link to={`/transaksi?${query}&kind=income`} className="summary-item">
@@ -282,6 +316,50 @@ export default function Reports() {
           <span>Tidak termasuk saldo awal</span>
         </Link>
       </section>
+      {budgets.length > 0 && (
+        <section className="surface report-budgets">
+          <div className="section-heading">
+            <div>
+              <h2>Anggaran vs realisasi</h2>
+              <p>
+                {monthLabel(range.start.slice(0, 7))} · seluruh bulan, termasuk
+                transaksi mendatang
+              </p>
+            </div>
+            <Link
+              className="text-link"
+              to={`/anggaran?month=${range.start.slice(0, 7)}`}
+            >
+              Kelola →
+            </Link>
+          </div>
+          {budgets.map((b) => {
+            const p = budgetUsage.get(b.id)!;
+            return (
+              <div className="report-budget-row" key={b.id}>
+                <div>
+                  <strong>
+                    {ledger.categories.find((c) => c.id === b.categoryId)?.name}
+                  </strong>
+                  <small>
+                    {ledger.wallets.find((w) => w.id === b.walletId)?.name ??
+                      "Semua dompet"}
+                  </small>
+                </div>
+                <ProgressMeter
+                  label="Realisasi anggaran"
+                  value={p.ratio}
+                  hidden={hidden}
+                  warning={p.status !== "normal"}
+                />
+                <span>
+                  {money(p.spent, hidden)} / {money(b.amount, hidden)}
+                </span>
+              </div>
+            );
+          })}
+        </section>
+      )}
       {!filtered.length ? (
         <section className="surface">
           <EmptyState
@@ -386,7 +464,8 @@ export default function Reports() {
       )}
       <p className="page-footnote">
         Selisih periode = pemasukan − pengeluaran. Saldo keseluruhan dan saldo
-        awal bisa dilihat di Beranda.
+        awal bisa dilihat di Beranda. Transfer antar dompet tidak dihitung
+        sebagai pemasukan atau pengeluaran.
       </p>
     </>
   );

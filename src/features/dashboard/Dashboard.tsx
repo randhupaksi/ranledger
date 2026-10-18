@@ -27,6 +27,8 @@ import {
   totals,
 } from "../../domain/ledger";
 import type { Transaction } from "../../domain/ledger";
+import { ledgerTotals } from "../../domain/planning";
+import PlanningOverview from "./PlanningOverview";
 
 export default function Dashboard({
   onAdd,
@@ -51,8 +53,8 @@ export default function Dashboard({
   );
   const summary = useMemo(() => totals(filtered), [filtered]);
   const overall = useMemo(
-    () => totals(ledger.transactions, ledger.preferences.openingBalance),
-    [ledger.transactions, ledger.preferences.openingBalance],
+    () => ledgerTotals(ledger),
+    [ledger.transactions, ledger.wallets],
   );
   const hidden = ledger.preferences.hideAmounts;
   const categorySummary = useMemo(
@@ -77,8 +79,8 @@ export default function Dashboard({
     <>
       <PageHeading
         eyebrow="RUANG KEUANGANMU"
-        title="Semua tercatat, lebih tenang"
-        description="Lihat ke mana uangmu pergi. Mulai dari catatan hari ini."
+        title="Keuanganmu hari ini"
+        description="Saldo, rencana, dan catatanmu dalam satu pandangan."
         action={
           <button className="button primary" onClick={onAdd}>
             <Plus size={18} />
@@ -123,7 +125,7 @@ export default function Dashboard({
             </button>
           </div>
           <p className="balance-amount">{money(overall.balance, hidden)}</p>
-          <p className="balance-context">Saldo awal + seluruh transaksi</p>
+          <p className="balance-context">Saldo gabungan seluruh dompet</p>
           <div className="balance-foot">
             <span className="balance-chip">
               <span />
@@ -135,7 +137,7 @@ export default function Dashboard({
         <div className="balance-detail">
           <div>
             <span>Saldo awal</span>
-            <strong>{money(ledger.preferences.openingBalance, hidden)}</strong>
+            <strong>{money(overall.balance - overall.net, hidden)}</strong>
           </div>
           <div>
             <span>Total pemasukan</span>
@@ -145,11 +147,12 @@ export default function Dashboard({
             <span>Total pengeluaran</span>
             <strong>−{money(overall.expense, hidden)}</strong>
           </div>
-          <Link to="/pengaturan">
-            Atur saldo awal <ArrowRight size={15} />
+          <Link to="/dompet">
+            Kelola dompet <ArrowRight size={15} />
           </Link>
         </div>
       </section>
+      <PlanningOverview />
       <div className="section-heading period-heading">
         <div>
           <h2>Ringkasan periode</h2>
