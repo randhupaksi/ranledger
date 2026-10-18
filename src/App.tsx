@@ -18,6 +18,11 @@ import {
   ShieldCheck,
   WalletCards,
   X,
+  Wallet,
+  CalendarClock,
+  PieChart,
+  FileUp,
+  MoreHorizontal,
 } from "lucide-react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -37,6 +42,14 @@ import type { Transaction } from "./domain/ledger";
 const Reports = lazy(() => import("./features/reports/Reports"));
 const BackupPage = lazy(() => import("./features/backup/BackupPage"));
 const Settings = lazy(() => import("./features/settings/Settings"));
+const Wallets = lazy(() => import("./features/wallets/Wallets"));
+const Budgets = lazy(() => import("./features/budgets/Budgets"));
+const Schedules = lazy(() => import("./features/planning/Schedules"));
+const Goals = lazy(() => import("./features/planning/Goals"));
+const ImportCsv = lazy(() => import("./features/import/ImportCsv"));
+const Modal = lazy(() =>
+  import("./components/Modal").then((module) => ({ default: module.Modal })),
+);
 
 class AppBoundary extends Component<
   { children: ReactNode },
@@ -63,6 +76,10 @@ const navigation = [
     icon: WalletCards,
   },
   { to: "/laporan", label: "Laporan", mobile: "Laporan", icon: BarChart3 },
+  { to: "/dompet", label: "Dompet", mobile: "Dompet", icon: Wallet },
+  { to: "/anggaran", label: "Anggaran", mobile: "Anggaran", icon: PieChart },
+  { to: "/rencana", label: "Rencana", mobile: "Rencana", icon: CalendarClock },
+  { to: "/impor", label: "Impor CSV", mobile: "Impor", icon: FileUp },
   {
     to: "/backup",
     label: "Backup & pemulihan",
@@ -77,6 +94,19 @@ const navigation = [
   },
 ];
 function UpdateNotice({ editing }: { editing: boolean }) {
+  const [openDialog, setOpenDialog] = useState(false);
+  useEffect(() => {
+    const inspect = () =>
+      setOpenDialog(
+        Boolean(
+          document.querySelector('[role="dialog"], [data-editing="true"]'),
+        ),
+      );
+    const observer = new MutationObserver(inspect);
+    observer.observe(document.body, { childList: true, subtree: true });
+    inspect();
+    return () => observer.disconnect();
+  }, []);
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
@@ -93,7 +123,7 @@ function UpdateNotice({ editing }: { editing: boolean }) {
         </strong>
         <p>
           {needRefresh
-            ? editing
+            ? editing || openDialog
               ? "Selesaikan formulir sebelum memperbarui aplikasi."
               : "Catatan tersimpan. Muat versi terbaru saat kamu siap."
             : "Kamu bisa membuka dan mencatat tanpa koneksi di browser ini."}
@@ -102,7 +132,7 @@ function UpdateNotice({ editing }: { editing: boolean }) {
       {needRefresh && (
         <button
           className="button primary small-button"
-          disabled={editing}
+          disabled={editing || openDialog}
           onClick={() => void updateServiceWorker(true)}
         >
           Perbarui
@@ -124,9 +154,14 @@ function UpdateNotice({ editing }: { editing: boolean }) {
 function Shell() {
   const ledger = useLedger();
   const [dialog, setDialog] = useState<Transaction | "new" | null>(null);
+  const [more, setMore] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const location = useLocation();
-  const active = navigation.find((n) => n.to === location.pathname);
+  const active = navigation.find(
+    (n) =>
+      n.to === location.pathname ||
+      (n.to === "/rencana" && location.pathname.startsWith("/rencana/")),
+  );
   useEffect(() => {
     const connected = () => setOnline(true);
     const disconnected = () => setOnline(false);
@@ -206,7 +241,7 @@ function Shell() {
           </div>
           <div className="sidebar-footer">
             <span className="local-dot" />
-            Penyimpanan lokal<span>v1.0</span>
+            Penyimpanan lokal<span>v2.0</span>
           </div>
         </div>
       </aside>
@@ -279,6 +314,11 @@ function Shell() {
               <Route path="/laporan" element={<Reports />} />
               <Route path="/backup" element={<BackupPage />} />
               <Route path="/pengaturan" element={<Settings />} />
+              <Route path="/dompet" element={<Wallets />} />
+              <Route path="/anggaran" element={<Budgets />} />
+              <Route path="/rencana" element={<Schedules />} />
+              <Route path="/rencana/tujuan" element={<Goals />} />
+              <Route path="/impor" element={<ImportCsv />} />
               <Route
                 path="*"
                 element={
@@ -299,18 +339,62 @@ function Shell() {
         </main>
       </div>
       <nav aria-label="Navigasi mobile" className="mobile-nav">
-        {navigation.map(({ to, mobile, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === "/"}
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <Icon size={20} strokeWidth={1.8} />
-            <span>{mobile}</span>
-          </NavLink>
-        ))}
+        {navigation
+          .filter((n) =>
+            ["/", "/transaksi", "/anggaran", "/rencana"].includes(n.to),
+          )
+          .map(({ to, mobile, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Icon size={20} strokeWidth={1.8} />
+              <span>{mobile}</span>
+            </NavLink>
+          ))}
+        <button
+          onClick={() => setMore(true)}
+          aria-expanded={more}
+          className={
+            active &&
+            !["/", "/transaksi", "/anggaran", "/rencana"].includes(active.to)
+              ? "active"
+              : ""
+          }
+        >
+          <MoreHorizontal size={20} />
+          <span>Lainnya</span>
+        </button>
       </nav>
+      {more && (
+        <Suspense fallback={null}>
+          <Modal
+            open={more}
+            onClose={() => setMore(false)}
+            title="Ruang keuanganmu"
+            description="Buka dompet, laporan, atau kelola catatan di perangkat ini."
+          >
+            <nav className="more-menu" aria-label="Menu lainnya">
+              {navigation
+                .filter(
+                  (n) =>
+                    !["/", "/transaksi", "/anggaran", "/rencana"].includes(
+                      n.to,
+                    ),
+                )
+                .map(({ to, label, icon: Icon }) => (
+                  <Link key={to} to={to} onClick={() => setMore(false)}>
+                    <Icon size={19} />
+                    <span>{label}</span>
+                    <ChevronRight size={16} />
+                  </Link>
+                ))}
+            </nav>
+          </Modal>
+        </Suspense>
+      )}
       {dialog && (
         <Suspense
           fallback={
@@ -329,7 +413,7 @@ function Shell() {
         </Suspense>
       )}
       <UpdateNotice editing={Boolean(dialog)} />
-      {ledger.transactions.length >= 90_000 && (
+      {ledger.transactions.length + ledger.transfers.length >= 90_000 && (
         <div className="capacity-notice" role="status">
           Mendekati batas 100.000 transaksi. Buat backup lengkap sebelum
           melanjutkan.
