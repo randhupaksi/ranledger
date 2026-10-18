@@ -2,11 +2,7 @@ import Dexie, { type Table } from "dexie";
 import {
   defaultCategories,
   defaultPreferences,
-  validateLedger,
   totals,
-  transactionSchema,
-  categorySchema,
-  preferencesSchema,
 } from "../domain/ledger";
 import type {
   Category,
@@ -14,7 +10,7 @@ import type {
   Preferences,
   Transaction,
 } from "../domain/ledger";
-import { makeImportPlan, type Backup, type ImportMode } from "./backup";
+import type { Backup, ImportMode } from "./backup";
 
 interface Meta {
   id: string;
@@ -64,6 +60,8 @@ export class LedgerDatabase extends Dexie {
     await this.meta.update("main", { revision: meta.revision + 1 });
   }
   async saveTransaction(transaction: Transaction, isEdit: boolean) {
+    const { transactionSchema, validateLedger } =
+      await import("../domain/validation");
     transactionSchema.parse(transaction);
     await this.transaction("rw", this.tables, async () => {
       const current = await this.snapshot();
@@ -109,6 +107,7 @@ export class LedgerDatabase extends Dexie {
     });
   }
   async saveCategory(category: Category) {
+    const { categorySchema } = await import("../domain/validation");
     categorySchema.parse(category);
     await this.transaction("rw", this.tables, async () => {
       const categories = await this.categories.toArray();
@@ -137,6 +136,7 @@ export class LedgerDatabase extends Dexie {
     });
   }
   async updatePreferences(values: Partial<Preferences>) {
+    const { preferencesSchema } = await import("../domain/validation");
     await this.transaction("rw", this.tables, async () => {
       const current = await this.snapshot();
       const preferences = preferencesSchema.parse({
@@ -151,6 +151,10 @@ export class LedgerDatabase extends Dexie {
     });
   }
   async restore(backup: Backup, mode: ImportMode, expectedRevision: number) {
+    const [{ makeImportPlan }, { validateLedger }] = await Promise.all([
+      import("./backup"),
+      import("../domain/validation"),
+    ]);
     return this.transaction("rw", this.tables, async () => {
       const current = await this.snapshot();
       if (current.revision !== expectedRevision)

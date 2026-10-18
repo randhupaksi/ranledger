@@ -8,9 +8,9 @@ import {
   safeSum,
   totals,
   validDate,
-  validateLedger,
 } from "./ledger";
 import type { Transaction } from "./ledger";
+import { validateLedger } from "./validation";
 const at = "2026-10-17T08:00:00.000Z";
 function tx(
   id: string,

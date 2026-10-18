@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export const MAX_AMOUNT = 1_000_000_000_000;
 export const MAX_ROWS = 100_000;
 export type TransactionKind = "income" | "expense";
@@ -9,6 +7,41 @@ export type Period = "today" | "week" | "month" | "year" | "all" | "custom";
 export interface DateRange {
   start: string;
   end: string;
+}
+export interface Category {
+  id: string;
+  name: string;
+  kind: TransactionKind;
+  archived: boolean;
+}
+export interface Transaction {
+  id: string;
+  kind: TransactionKind;
+  amount: number;
+  categoryId: string;
+  date: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Preferences {
+  openingBalance: number;
+  theme: Theme;
+  dateFormat: DateFormat;
+  hideAmounts: boolean;
+  onboarded: boolean;
+  lastBackupAt: string | null;
+}
+export interface Ledger {
+  transactions: Transaction[];
+  categories: Category[];
+  preferences: Preferences;
+  revision: number;
+}
+export interface CategoryTotal {
+  id: string;
+  amount: number;
+  name: string;
 }
 
 export function localDate(date = new Date()): string {
@@ -20,53 +53,6 @@ export function validDate(value: string): boolean {
   const parsed = new Date(y, m - 1, d, 12);
   return y >= 1900 && y <= 9999 && localDate(parsed) === value;
 }
-const idSchema = z
-  .string()
-  .min(1)
-  .max(100)
-  .regex(/^[a-zA-Z0-9_-]+$/);
-const dateSchema = z.string().refine(validDate, "Tanggal tidak valid.");
-const timeSchema = z.string().datetime({ offset: true });
-export const categorySchema = z
-  .object({
-    id: idSchema,
-    name: z.string().trim().min(1).max(60),
-    kind: z.enum(["income", "expense"]),
-    archived: z.boolean(),
-  })
-  .strict();
-export const transactionSchema = z
-  .object({
-    id: idSchema,
-    kind: z.enum(["income", "expense"]),
-    amount: z.number().int().min(1).max(MAX_AMOUNT),
-    categoryId: idSchema,
-    date: dateSchema,
-    note: z.string().max(500),
-    createdAt: timeSchema,
-    updatedAt: timeSchema,
-  })
-  .strict();
-export const preferencesSchema = z
-  .object({
-    openingBalance: z.number().int().min(-MAX_AMOUNT).max(MAX_AMOUNT),
-    theme: z.enum(["light", "dark", "system"]),
-    dateFormat: z.enum(["long", "short"]),
-    hideAmounts: z.boolean(),
-    onboarded: z.boolean(),
-    lastBackupAt: timeSchema.nullable(),
-  })
-  .strict();
-export type Category = z.infer<typeof categorySchema>;
-export type Transaction = z.infer<typeof transactionSchema>;
-export type Preferences = z.infer<typeof preferencesSchema>;
-export interface Ledger {
-  transactions: Transaction[];
-  categories: Category[];
-  preferences: Preferences;
-  revision: number;
-}
-
 export const defaultPreferences: Preferences = {
   openingBalance: 0,
   theme: "system",
@@ -113,41 +99,25 @@ export function safeSum(values: number[]): number {
   }, 0);
 }
 export function totals(transactions: Transaction[], openingBalance = 0) {
-  const income = safeSum(
-    transactions.filter((t) => t.kind === "income").map((t) => t.amount),
-  );
-  const expense = safeSum(
-    transactions.filter((t) => t.kind === "expense").map((t) => t.amount),
-  );
+  let income = 0;
+  let expense = 0;
+  for (const transaction of transactions) {
+    if (transaction.kind === "income") {
+      income += transaction.amount;
+    } else {
+      expense += transaction.amount;
+    }
+    if (!Number.isSafeInteger(income) || !Number.isSafeInteger(expense))
+      throw new Error(
+        "Total nominal melampaui batas hitung aman. Kurangi nilai atau jumlah catatan.",
+      );
+  }
   return {
     income,
     expense,
     net: safeSum([income, -expense]),
     balance: safeSum([openingBalance, income, -expense]),
   };
-}
-export function validateLedger(ledger: Ledger): Ledger {
-  if (ledger.transactions.length > MAX_ROWS || ledger.categories.length > 1000)
-    throw new Error("Batas 100.000 transaksi atau 1.000 kategori terlampaui.");
-  preferencesSchema.parse(ledger.preferences);
-  const categoryMap = new Map<string, Category>();
-  for (const c of ledger.categories) {
-    categorySchema.parse(c);
-    if (categoryMap.has(c.id))
-      throw new Error("ID kategori ganda ditemukan di file.");
-    categoryMap.set(c.id, c);
-  }
-  const ids = new Set<string>();
-  for (const t of ledger.transactions) {
-    transactionSchema.parse(t);
-    if (ids.has(t.id)) throw new Error("ID transaksi ganda ditemukan di file.");
-    ids.add(t.id);
-    const c = categoryMap.get(t.categoryId);
-    if (!c || c.kind !== t.kind)
-      throw new Error("Kategori transaksi hilang atau jenisnya tidak sesuai.");
-  }
-  totals(ledger.transactions, ledger.preferences.openingBalance);
-  return ledger;
 }
 export function parseAmount(value: string, allowNegative = false): number {
   const trimmed = value.trim();
@@ -178,17 +148,24 @@ const moneyFormatter = new Intl.NumberFormat("id-ID", {
   currency: "IDR",
   maximumFractionDigits: 0,
 });
+const dateFormatters: Record<DateFormat, Intl.DateTimeFormat> = {
+  long: new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }),
+  short: new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }),
+};
 export function money(amount: number, hidden = false): string {
   return hidden ? "Rp ••••••" : moneyFormatter.format(amount);
 }
 export function dateLabel(value: string, format: DateFormat = "long"): string {
   const [y, m, d] = value.split("-").map(Number);
-  return new Intl.DateTimeFormat(
-    "id-ID",
-    format === "short"
-      ? { day: "2-digit", month: "2-digit", year: "numeric" }
-      : { day: "numeric", month: "short", year: "numeric" },
-  ).format(new Date(y, m - 1, d, 12));
+  return dateFormatters[format].format(new Date(y, m - 1, d, 12));
 }
 export function dateRange(
   period: Period,
@@ -213,6 +190,19 @@ export interface Filters extends DateRange {
   categoryId: string;
   search: string;
 }
+const sortedTransactions = new WeakMap<Transaction[], Transaction[]>();
+function orderedTransactions(transactions: Transaction[]) {
+  const cached = sortedTransactions.get(transactions);
+  if (cached) return cached;
+  const ordered = [...transactions].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      b.createdAt.localeCompare(a.createdAt) ||
+      a.id.localeCompare(b.id),
+  );
+  sortedTransactions.set(transactions, ordered);
+  return ordered;
+}
 export function filterTransactions(
   transactions: Transaction[],
   categories: Category[],
@@ -220,44 +210,36 @@ export function filterTransactions(
 ): Transaction[] {
   const names = new Map(categories.map((c) => [c.id, c.name]));
   const search = filter.search.toLocaleLowerCase("id-ID").trim();
-  return transactions
-    .filter(
-      (t) =>
-        t.date >= filter.start &&
-        t.date <= filter.end &&
-        (filter.kind === "all" || t.kind === filter.kind) &&
-        (!filter.categoryId || t.categoryId === filter.categoryId) &&
-        (!search ||
-          `${t.note} ${names.get(t.categoryId) ?? ""}`
-            .toLocaleLowerCase("id-ID")
-            .includes(search)),
-    )
-    .sort(
-      (a, b) =>
-        b.date.localeCompare(a.date) ||
-        b.createdAt.localeCompare(a.createdAt) ||
-        a.id.localeCompare(b.id),
-    );
+  return orderedTransactions(transactions).filter(
+    (transaction) =>
+      transaction.date >= filter.start &&
+      transaction.date <= filter.end &&
+      (filter.kind === "all" || transaction.kind === filter.kind) &&
+      (!filter.categoryId || transaction.categoryId === filter.categoryId) &&
+      (!search ||
+        `${transaction.note} ${names.get(transaction.categoryId) ?? ""}`
+          .toLocaleLowerCase("id-ID")
+          .includes(search)),
+  );
 }
 export function categoryTotals(
   transactions: Transaction[],
   categories: Category[],
   kind: TransactionKind = "expense",
-) {
+): CategoryTotal[] {
   const map = new Map<string, number>();
   for (const t of transactions)
     if (t.kind === kind)
       map.set(t.categoryId, safeSum([map.get(t.categoryId) ?? 0, t.amount]));
+  const names = new Map(
+    categories.map((category) => [category.id, category.name]),
+  );
   return [...map.entries()]
-    .map(([id, amount]) => ({
-      id,
-      amount,
-      name: categories.find((c) => c.id === id)?.name ?? "Kategori",
-    }))
+    .map(([id, amount]) => ({ id, amount, name: names.get(id) ?? "Kategori" }))
     .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
 }
 export function errorMessage(error: unknown): string {
-  if (error instanceof z.ZodError)
+  if (error instanceof Error && error.name === "ZodError")
     return "Isi data tidak sesuai format Ranledger. Periksa nominal, tanggal, kategori, dan versi file.";
   if (error instanceof Error) {
     if (/quota/i.test(error.name + error.message))

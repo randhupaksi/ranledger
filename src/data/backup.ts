@@ -1,15 +1,17 @@
 import { z } from "zod";
+import { MAX_ROWS, emptyLedger, localDate, totals } from "../domain/ledger";
+import type {
+  Category,
+  Ledger,
+  Preferences,
+  Transaction,
+} from "../domain/ledger";
 import {
   categorySchema,
-  transactionSchema,
   preferencesSchema,
+  transactionSchema,
   validateLedger,
-  MAX_ROWS,
-  emptyLedger,
-  localDate,
-  totals,
-} from "../domain/ledger";
-import type { Ledger, Transaction } from "../domain/ledger";
+} from "../domain/validation";
 
 export const backupSchema = z
   .object({
@@ -22,7 +24,15 @@ export const backupSchema = z
     preferences: preferencesSchema,
   })
   .strict();
-export type Backup = z.infer<typeof backupSchema>;
+export interface Backup {
+  app: "ranledger";
+  formatVersion: 1;
+  currency: "IDR";
+  exportedAt: string;
+  transactions: Transaction[];
+  categories: Category[];
+  preferences: Preferences;
+}
 export type ImportMode = "merge" | "replace";
 // JSON remains a recovery path for the maximum supported ledger, including long notes.
 export const MAX_JSON_BYTES = 256 * 1024 * 1024;
