@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Download, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useSearchParams } from "react-router";
-import { useLedger } from "../../components/LedgerProvider";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import {
   EmptyState,
@@ -18,7 +18,6 @@ import {
   totals,
 } from "../../domain/ledger";
 import type { Transaction, TransactionKind } from "../../domain/ledger";
-import { exportReport } from "../../data/backup";
 
 export default function Transactions({
   onAdd,
@@ -27,7 +26,8 @@ export default function Transactions({
   onAdd: () => void;
   onEdit: (transaction: Transaction) => void;
 }) {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const { period, range, update, params, label } = usePeriod("all");
   const [, setParams] = useSearchParams();
   const [exporting, setExporting] = useState(false);
@@ -55,7 +55,7 @@ export default function Transactions({
       deferredSearch,
     ],
   );
-  const summary = totals(filtered);
+  const summary = useMemo(() => totals(filtered), [filtered]);
   const page = Math.min(
     Math.max(1, Math.floor(Number(params.get("page")) || 1)),
     Math.max(1, Math.ceil(filtered.length / 30)),
@@ -65,6 +65,7 @@ export default function Transactions({
     if (exporting) return;
     setExporting(true);
     try {
+      const { exportReport } = await import("../../data/backup");
       await exportReport(
         filtered,
         ledger,

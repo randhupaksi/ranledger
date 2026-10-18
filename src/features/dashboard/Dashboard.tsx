@@ -8,7 +8,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { useLedger } from "../../components/LedgerProvider";
+import { useMemo } from "react";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import {
   CategoryBreakdown,
   EmptyState,
@@ -34,22 +35,31 @@ export default function Dashboard({
   onAdd: () => void;
   onEdit: (transaction: Transaction) => void;
 }) {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const { period, range, update, label } = usePeriod();
   const navigate = useNavigate();
-  const filtered = filterTransactions(ledger.transactions, ledger.categories, {
-    ...range,
-    kind: "all",
-    categoryId: "",
-    search: "",
-  });
-  const summary = totals(filtered);
-  const overall = totals(
-    ledger.transactions,
-    ledger.preferences.openingBalance,
+  const filtered = useMemo(
+    () =>
+      filterTransactions(ledger.transactions, ledger.categories, {
+        ...range,
+        kind: "all",
+        categoryId: "",
+        search: "",
+      }),
+    [ledger.transactions, ledger.categories, range.start, range.end],
+  );
+  const summary = useMemo(() => totals(filtered), [filtered]);
+  const overall = useMemo(
+    () => totals(ledger.transactions, ledger.preferences.openingBalance),
+    [ledger.transactions, ledger.preferences.openingBalance],
   );
   const hidden = ledger.preferences.hideAmounts;
-  const biggest = categoryTotals(filtered, ledger.categories)[0];
+  const categorySummary = useMemo(
+    () => categoryTotals(filtered, ledger.categories),
+    [filtered, ledger.categories],
+  );
+  const biggest = categorySummary[0];
   const backupAge = ledger.preferences.lastBackupAt
     ? Math.floor(
         (Date.now() - new Date(ledger.preferences.lastBackupAt).getTime()) /
@@ -218,6 +228,7 @@ export default function Dashboard({
           <CategoryBreakdown
             transactions={filtered}
             categories={ledger.categories}
+            items={categorySummary}
             hidden={hidden}
             onSelect={(id) =>
               navigate(`/transaksi?${query}&kind=expense&category=${id}`)

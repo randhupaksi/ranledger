@@ -28,7 +28,7 @@ import {
 } from "./components/LedgerProvider";
 import { Logo } from "./components/ui";
 import Dashboard from "./features/dashboard/Dashboard";
-import Transactions from "./features/transactions/Transactions";
+const Transactions = lazy(() => import("./features/transactions/Transactions"));
 const TransactionDialog = lazy(
   () => import("./features/transactions/TransactionDialog"),
 );
@@ -122,7 +122,7 @@ function UpdateNotice({ editing }: { editing: boolean }) {
   );
 }
 function Shell() {
-  const { ledger } = useLedger();
+  const ledger = useLedger();
   const [dialog, setDialog] = useState<Transaction | "new" | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const location = useLocation();

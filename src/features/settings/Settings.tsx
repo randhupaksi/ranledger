@@ -1,5 +1,5 @@
 import { Modal } from "../../components/Modal";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Archive,
   ArchiveRestore,
@@ -13,7 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { Link } from "react-router";
-import { useLedger } from "../../components/LedgerProvider";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice, PageHeading } from "../../components/ui";
 import { db } from "../../data/database";
@@ -27,7 +27,7 @@ function CategoryDialog({
   category?: Category;
   onClose: () => void;
 }) {
-  const { notify } = useLedger();
+  const notify = useNotify();
   const [name, setName] = useState(category?.name ?? "");
   const [kind, setKind] = useState<TransactionKind>(
     category?.kind ?? "expense",
@@ -127,7 +127,8 @@ function CategoryDialog({
   );
 }
 export default function Settings() {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const [openingBalance, setOpeningBalance] = useState(
     ledger.preferences.openingBalance.toLocaleString("id-ID"),
   );
@@ -229,8 +230,21 @@ export default function Settings() {
       setResetBusy(false);
     }
   }
-  const visibleCategories = ledger.categories.filter((c) =>
-    categoryView === "archived" ? c.archived : !c.archived,
+  const categoryTransactionCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const transaction of ledger.transactions)
+      counts.set(
+        transaction.categoryId,
+        (counts.get(transaction.categoryId) ?? 0) + 1,
+      );
+    return counts;
+  }, [ledger.transactions]);
+  const visibleCategories = useMemo(
+    () =>
+      ledger.categories.filter((category) =>
+        categoryView === "archived" ? category.archived : !category.archived,
+      ),
+    [ledger.categories, categoryView],
   );
   const full =
     storage?.usage && storage.quota
@@ -394,11 +408,7 @@ export default function Settings() {
                     <strong>{c.name}</strong>
                     <span>
                       {c.kind === "income" ? "Pemasukan" : "Pengeluaran"} ·{" "}
-                      {
-                        ledger.transactions.filter((t) => t.categoryId === c.id)
-                          .length
-                      }{" "}
-                      transaksi
+                      {categoryTransactionCounts.get(c.id) ?? 0} transaksi
                     </span>
                   </div>
                   <button

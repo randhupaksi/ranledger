@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useMemo, useState } from "react";
-import { useLedger } from "../../components/LedgerProvider";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import {
   CategoryBreakdown,
   EmptyState,
@@ -24,7 +24,6 @@ import {
   totals,
 } from "../../domain/ledger";
 import type { DateRange, Transaction } from "../../domain/ledger";
-import { exportReport } from "../../data/backup";
 
 function chartBuckets(transactions: Transaction[], range: DateRange) {
   if (!transactions.length) return [];
@@ -139,59 +138,86 @@ function CashflowChart({
   );
 }
 export default function Reports() {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const { period, range, update, label } = usePeriod();
   const navigate = useNavigate();
   const [exporting, setExporting] = useState(false);
-  const filtered = filterTransactions(ledger.transactions, ledger.categories, {
-    ...range,
-    kind: "all",
-    categoryId: "",
-    search: "",
-  });
-  const summary = totals(filtered);
+  const filtered = useMemo(
+    () =>
+      filterTransactions(ledger.transactions, ledger.categories, {
+        ...range,
+        kind: "all",
+        categoryId: "",
+        search: "",
+      }),
+    [ledger.transactions, ledger.categories, range.start, range.end],
+  );
+  const summary = useMemo(() => totals(filtered), [filtered]);
   const hidden = ledger.preferences.hideAmounts;
-  const categories = categoryTotals(filtered, ledger.categories);
+  const categories = useMemo(
+    () => categoryTotals(filtered, ledger.categories),
+    [filtered, ledger.categories],
+  );
   const query = new URLSearchParams({
     period,
     start: range.start,
     end: range.end,
   });
-  const startDate = new Date(`${range.start}T12:00:00`);
-  const endDate = new Date(`${range.end}T12:00:00`);
-  const days =
-    Math.round(
-      (Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) -
-        Date.UTC(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        )) /
-        86_400_000,
-    ) + 1;
-  const previousEnd = new Date(startDate);
-  previousEnd.setDate(previousEnd.getDate() - 1);
-  const previousStart = new Date(startDate);
-  previousStart.setDate(previousStart.getDate() - days);
-  const previous =
-    period === "all" || days <= 0
-      ? []
-      : filterTransactions(ledger.transactions, ledger.categories, {
-          start: localDate(previousStart),
-          end: localDate(previousEnd),
-          kind: "all",
-          categoryId: "",
-          search: "",
-        });
-  const previousExpense = totals(previous).expense;
-  const change =
-    previousExpense > 0
-      ? ((summary.expense - previousExpense) / previousExpense) * 100
-      : null;
+  const comparison = useMemo(() => {
+    const startDate = new Date(`${range.start}T12:00:00`);
+    const endDate = new Date(`${range.end}T12:00:00`);
+    const days =
+      Math.round(
+        (Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+        ) -
+          Date.UTC(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+          )) /
+          86_400_000,
+      ) + 1;
+    const previousEnd = new Date(startDate);
+    previousEnd.setDate(previousEnd.getDate() - 1);
+    const previousStart = new Date(startDate);
+    previousStart.setDate(previousStart.getDate() - days);
+    const previous =
+      period === "all" || days <= 0
+        ? []
+        : filterTransactions(ledger.transactions, ledger.categories, {
+            start: localDate(previousStart),
+            end: localDate(previousEnd),
+            kind: "all",
+            categoryId: "",
+            search: "",
+          });
+    const previousExpense = totals(previous).expense;
+    return {
+      change:
+        previousExpense > 0
+          ? ((summary.expense - previousExpense) / previousExpense) * 100
+          : null,
+      days,
+      previousStart,
+      previousEnd,
+    };
+  }, [
+    ledger.transactions,
+    ledger.categories,
+    period,
+    range.start,
+    range.end,
+    summary.expense,
+  ]);
   async function download() {
     if (exporting) return;
     setExporting(true);
     try {
+      const { exportReport } = await import("../../data/backup");
       await exportReport(filtered, ledger, label);
       notify("Laporan Excel dibuat sesuai periode.");
     } catch (e) {
@@ -300,6 +326,7 @@ export default function Reports() {
               <CategoryBreakdown
                 transactions={filtered}
                 categories={ledger.categories}
+                items={categories}
                 hidden={hidden}
                 onSelect={(id) =>
                   navigate(`/transaksi?${query}&kind=expense&category=${id}`)
@@ -327,25 +354,25 @@ export default function Reports() {
                   </p>
                 </>
               )}
-              {change !== null && (
+              {comparison.change !== null && (
                 <div className="comparison-note">
                   <strong>
                     Pengeluaran{" "}
-                    {Math.abs(change).toLocaleString("id-ID", {
+                    {Math.abs(comparison.change).toLocaleString("id-ID", {
                       maximumFractionDigits: 1,
                     })}
                     %{" "}
-                    {change > 0
+                    {comparison.change > 0
                       ? "lebih tinggi"
-                      : change < 0
+                      : comparison.change < 0
                         ? "lebih rendah"
                         : "sama"}
                   </strong>
                   <p>
-                    Dibanding {days} hari sebelumnya (
-                    {dateLabel(localDate(previousStart))} –{" "}
-                    {dateLabel(localDate(previousEnd))}). Perbandingan
-                    berdasarkan catatan yang tersedia.
+                    Dibanding {comparison.days} hari sebelumnya (
+                    {dateLabel(localDate(comparison.previousStart))} –{" "}
+                    {dateLabel(localDate(comparison.previousEnd))}).
+                    Perbandingan berdasarkan catatan yang tersedia.
                   </p>
                 </div>
               )}

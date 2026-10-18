@@ -10,7 +10,7 @@ import {
   validDate,
 } from "../../domain/ledger";
 import type { Transaction, TransactionKind } from "../../domain/ledger";
-import { useLedger } from "../../components/LedgerProvider";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice } from "../../components/ui";
 
@@ -42,7 +42,8 @@ export default function TransactionDialog({
   transaction?: Transaction;
   onClose: () => void;
 }) {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const [kind, setKind] = useState<TransactionKind>(
     transaction?.kind ?? "expense",
   );

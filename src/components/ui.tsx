@@ -5,10 +5,11 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { SelectField } from "./SelectField";
 import type {
   Category,
+  CategoryTotal,
   DateRange,
   Ledger,
   Period,
@@ -180,7 +181,10 @@ export function TransactionList({
   onEdit: (t: Transaction) => void;
   compact?: boolean;
 }) {
-  const categories = new Map(ledger.categories.map((c) => [c.id, c]));
+  const categories = useMemo(
+    () => new Map(ledger.categories.map((category) => [category.id, category])),
+    [ledger.categories],
+  );
   return (
     <div className={`transaction-list ${compact ? "compact" : ""}`}>
       {!compact && (
@@ -382,19 +386,39 @@ export function CategoryBreakdown({
   categories,
   hidden,
   onSelect,
+  items,
 }: {
   transactions: Transaction[];
   categories: Category[];
   hidden: boolean;
   onSelect: (id: string) => void;
+  items?: CategoryTotal[];
 }) {
-  const map = new Map<string, number>();
-  for (const t of transactions)
-    if (t.kind === "expense")
-      map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount);
-  const sorted = [...map].sort((a, b) => b[1] - a[1]);
-  const total = sorted.reduce((s, [, n]) => s + n, 0);
-  if (!sorted.length)
+  const breakdown = useMemo(() => {
+    if (items) return items;
+    const totals = new Map<string, number>();
+    for (const transaction of transactions)
+      if (transaction.kind === "expense")
+        totals.set(
+          transaction.categoryId,
+          (totals.get(transaction.categoryId) ?? 0) + transaction.amount,
+        );
+    const names = new Map(
+      categories.map((category) => [category.id, category.name]),
+    );
+    return [...totals]
+      .map(([id, amount]) => ({
+        id,
+        amount,
+        name: names.get(id) ?? "Kategori",
+      }))
+      .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
+  }, [items, transactions, categories]);
+  const total = useMemo(
+    () => breakdown.reduce((sum, item) => sum + item.amount, 0),
+    [breakdown],
+  );
+  if (!breakdown.length)
     return (
       <div className="quiet-empty">
         <p>Belum ada pengeluaran di periode ini.</p>
@@ -403,7 +427,7 @@ export function CategoryBreakdown({
     );
   return (
     <div className="category-breakdown">
-      {sorted.map(([id, amount], i) => (
+      {breakdown.map(({ id, amount, name }, i) => (
         <button
           className="category-bar-row"
           key={id}
@@ -412,7 +436,7 @@ export function CategoryBreakdown({
           <span className="category-bar-heading">
             <span>
               <i className={`category-dot color-${i % 5}`} />
-              {categories.find((c) => c.id === id)?.name}
+              {name}
             </span>
             <strong>{money(amount, hidden)}</strong>
           </span>

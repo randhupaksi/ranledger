@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -12,15 +13,18 @@ import type { Ledger } from "../domain/ledger";
 import { errorMessage } from "../domain/ledger";
 import { Logo } from "./ui";
 
-interface LedgerContextValue {
-  ledger: Ledger;
-  notify: (message: string, error?: boolean) => void;
-}
-const LedgerContext = createContext<LedgerContextValue | null>(null);
+type Notify = (message: string, error?: boolean) => void;
+const LedgerContext = createContext<Ledger | null>(null);
+const NotifyContext = createContext<Notify | null>(null);
 export function useLedger() {
-  const context = useContext(LedgerContext);
-  if (!context) throw new Error("LedgerProvider tidak tersedia.");
-  return context;
+  const ledger = useContext(LedgerContext);
+  if (!ledger) throw new Error("LedgerProvider tidak tersedia.");
+  return ledger;
+}
+export function useNotify() {
+  const notify = useContext(NotifyContext);
+  if (!notify) throw new Error("LedgerProvider tidak tersedia.");
+  return notify;
 }
 export function LedgerProvider({ children }: { children: ReactNode }) {
   const ledger = useLiveQuery(() => db.snapshot());
@@ -29,6 +33,10 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     error: boolean;
     id: number;
   } | null>(null);
+  const notify = useCallback<Notify>(
+    (message, error = false) => setToast({ message, error, id: Date.now() }),
+    [],
+  );
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), toast.error ? 9000 : 4500);
@@ -56,31 +64,27 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       </div>
     );
   return (
-    <LedgerContext.Provider
-      value={{
-        ledger,
-        notify: (message, error = false) =>
-          setToast({ message, error, id: Date.now() }),
-      }}
-    >
-      {children}
-      {toast && (
-        <div
-          className={`toast ${toast.error ? "toast-error" : ""}`}
-          role={toast.error ? "alert" : "status"}
-          key={toast.id}
-        >
-          {toast.error ? <CircleAlert size={20} /> : <Check size={20} />}
-          <span>{toast.message}</span>
-          <button
-            className="icon-button"
-            aria-label="Tutup pemberitahuan"
-            onClick={() => setToast(null)}
+    <LedgerContext.Provider value={ledger}>
+      <NotifyContext.Provider value={notify}>
+        {children}
+        {toast && (
+          <div
+            className={`toast ${toast.error ? "toast-error" : ""}`}
+            role={toast.error ? "alert" : "status"}
+            key={toast.id}
           >
-            <X size={17} />
-          </button>
-        </div>
-      )}
+            {toast.error ? <CircleAlert size={20} /> : <Check size={20} />}
+            <span>{toast.message}</span>
+            <button
+              className="icon-button"
+              aria-label="Tutup pemberitahuan"
+              onClick={() => setToast(null)}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
+      </NotifyContext.Provider>
     </LedgerContext.Provider>
   );
 }

@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
-import { useLedger } from "../../components/LedgerProvider";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { ErrorNotice, PageHeading } from "../../components/ui";
 import {
   backupToExcel,
@@ -41,7 +41,8 @@ interface Preview {
   filename: string;
 }
 export default function BackupPage() {
-  const { ledger, notify } = useLedger();
+  const ledger = useLedger();
+  const notify = useNotify();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
