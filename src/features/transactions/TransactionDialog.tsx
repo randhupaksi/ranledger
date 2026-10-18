@@ -13,6 +13,7 @@ import type { Transaction, TransactionKind } from "../../domain/ledger";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice } from "../../components/ui";
+import { WalletPicker } from "../../components/planning-ui";
 
 function formatAmountDigits(value: string) {
   return value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -57,6 +58,9 @@ export default function TransactionDialog({
       "",
   );
   const [date, setDate] = useState(transaction?.date ?? localDate());
+  const [walletId, setWalletId] = useState(
+    transaction?.walletId ?? ledger.wallets.find((w) => !w.archived)?.id ?? "",
+  );
   const [note, setNote] = useState(transaction?.note ?? "");
   const [error, setError] = useState("");
   const [amountError, setAmountError] = useState("");
@@ -129,6 +133,10 @@ export default function TransactionDialog({
           kind,
           amount: parsed,
           categoryId,
+          walletId,
+          ...(transaction?.occurrenceKey
+            ? { occurrenceKey: transaction.occurrenceKey }
+            : {}),
           date,
           note: note.trim(),
           createdAt: createdAt.current,
@@ -333,6 +341,12 @@ export default function TransactionDialog({
             )}
           </div>
           <div className="form-grid">
+            <WalletPicker
+              value={walletId}
+              onChange={setWalletId}
+              archivedId={transaction?.walletId}
+              disabled={busy}
+            />
             <div className="field">
               <label htmlFor="category">Kategori</label>
               <SelectField

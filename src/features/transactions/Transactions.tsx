@@ -1,6 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Download, Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
+import { WalletPicker } from "../../components/planning-ui";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import {
@@ -37,12 +38,14 @@ export default function Transactions({
   const kind: TransactionKind | "all" =
     rawKind === "income" || rawKind === "expense" ? rawKind : "all";
   const categoryId = params.get("category") ?? "";
+  const walletId = params.get("wallet") ?? "";
   const filtered = useMemo(
     () =>
       filterTransactions(ledger.transactions, ledger.categories, {
         ...range,
         kind,
         categoryId,
+        walletId,
         search: deferredSearch,
       }),
     [
@@ -52,6 +55,7 @@ export default function Transactions({
       range.end,
       kind,
       categoryId,
+      walletId,
       deferredSearch,
     ],
   );
@@ -60,7 +64,8 @@ export default function Transactions({
     Math.max(1, Math.floor(Number(params.get("page")) || 1)),
     Math.max(1, Math.ceil(filtered.length / 30)),
   );
-  const active = search || categoryId || kind !== "all" || period !== "all";
+  const active =
+    search || categoryId || walletId || kind !== "all" || period !== "all";
   async function report() {
     if (exporting) return;
     setExporting(true);
@@ -69,7 +74,7 @@ export default function Transactions({
       await exportReport(
         filtered,
         ledger,
-        `${label} · ${kind === "all" ? "Semua jenis" : kind === "income" ? "Pemasukan" : "Pengeluaran"}${categoryId ? ` · ${ledger.categories.find((c) => c.id === categoryId)?.name ?? "Kategori"}` : ""}${search ? ` · Pencarian: ${search}` : ""}`,
+        `${label} · ${walletId ? ledger.wallets.find((w) => w.id === walletId)?.name : "Semua dompet"} · ${kind === "all" ? "Semua jenis" : kind === "income" ? "Pemasukan" : "Pengeluaran"}${categoryId ? ` · ${ledger.categories.find((c) => c.id === categoryId)?.name ?? "Kategori"}` : ""}${search ? ` · Pencarian: ${search}` : ""}`,
       );
       notify(
         "Laporan Excel dibuat. Untuk pemulihan lengkap, gunakan menu Backup.",
@@ -87,10 +92,15 @@ export default function Transactions({
         title="Transaksi"
         description="Setiap pemasukan dan pengeluaran, di satu tempat."
         action={
-          <button className="button primary" onClick={onAdd}>
-            <Plus size={18} />
-            Catat transaksi
-          </button>
+          <>
+            <Link className="button secondary" to="/impor">
+              Impor CSV
+            </Link>
+            <button className="button primary" onClick={onAdd}>
+              <Plus size={18} />
+              Catat transaksi
+            </button>
+          </>
         }
       />
       <section className="surface transactions-surface">
@@ -125,6 +135,12 @@ export default function Transactions({
         <div className="filter-controls">
           <SlidersHorizontal size={16} className="filter-symbol" />
           <PeriodPicker period={period} range={range} onChange={update} />
+          <WalletPicker
+            label="Dompet transaksi"
+            value={walletId}
+            onChange={(value) => update({ wallet: value })}
+            all
+          />
           <label>
             <span className="sr-only">Jenis transaksi</span>
             <SelectField

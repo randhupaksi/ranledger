@@ -185,6 +185,10 @@ export function TransactionList({
     () => new Map(ledger.categories.map((category) => [category.id, category])),
     [ledger.categories],
   );
+  const wallets = useMemo(
+    () => new Map(ledger.wallets.map((w) => [w.id, w.name])),
+    [ledger.wallets],
+  );
   return (
     <div className={`transaction-list ${compact ? "compact" : ""}`}>
       {!compact && (
@@ -209,6 +213,7 @@ export function TransactionList({
               <strong>{t.note || categories.get(t.categoryId)?.name}</strong>
               <small>
                 {t.kind === "income" ? "Pemasukan" : "Pengeluaran"}
+                {` · ${wallets.get(t.walletId) ?? "Dompet"}`}
                 {compact &&
                   ` · ${dateLabel(t.date, ledger.preferences.dateFormat)}`}
                 {!compact && (
@@ -343,19 +348,21 @@ export function Pagination({
   count,
   pageSize = 30,
   onChange,
+  noun = "transaksi",
 }: {
   page: number;
   count: number;
   pageSize?: number;
   onChange: (page: number) => void;
+  noun?: string;
 }) {
   const pages = Math.max(1, Math.ceil(count / pageSize));
   return (
     <div className="pagination">
       <p>
         {count === 0
-          ? "0 transaksi"
-          : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, count)} dari ${count.toLocaleString("id-ID")} transaksi`}
+          ? `0 ${noun}`
+          : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, count)} dari ${count.toLocaleString("id-ID")} ${noun}`}
       </p>
       <div>
         <button

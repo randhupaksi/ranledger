@@ -17,7 +17,7 @@ import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice, PageHeading } from "../../components/ui";
 import { db } from "../../data/database";
-import { errorMessage, money, parseAmount } from "../../domain/ledger";
+import { errorMessage, parseAmount } from "../../domain/ledger";
 import type { Category, Theme, TransactionKind } from "../../domain/ledger";
 
 function CategoryDialog({
@@ -129,8 +129,10 @@ function CategoryDialog({
 export default function Settings() {
   const ledger = useLedger();
   const notify = useNotify();
+  const balanceWallet =
+    ledger.wallets.find((w) => w.id === "main-wallet") ?? ledger.wallets[0];
   const [openingBalance, setOpeningBalance] = useState(
-    ledger.preferences.openingBalance.toLocaleString("id-ID"),
+    balanceWallet.openingBalance.toLocaleString("id-ID"),
   );
   const [balanceError, setBalanceError] = useState("");
   const [savingBalance, setSavingBalance] = useState(false);
@@ -150,10 +152,8 @@ export default function Settings() {
     persistent?: boolean;
   } | null>(null);
   useEffect(() => {
-    setOpeningBalance(
-      ledger.preferences.openingBalance.toLocaleString("id-ID"),
-    );
-  }, [ledger.preferences.openingBalance]);
+    setOpeningBalance(balanceWallet.openingBalance.toLocaleString("id-ID"));
+  }, [balanceWallet.openingBalance]);
   useEffect(() => {
     async function inspect() {
       try {
@@ -180,9 +180,14 @@ export default function Settings() {
     setSavingBalance(true);
     setBalanceError("");
     try {
-      await db.updatePreferences({
-        openingBalance: parseAmount(openingBalance, true),
-      });
+      await db.saveEntity(
+        "wallets",
+        {
+          ...balanceWallet,
+          openingBalance: parseAmount(openingBalance, true),
+        },
+        true,
+      );
       notify("Saldo awal tersimpan. Pemasukan periode tidak berubah.");
     } catch (e) {
       setBalanceError(errorMessage(e));
@@ -326,8 +331,13 @@ export default function Settings() {
         </section>
         <section className="settings-section">
           <div className="settings-description">
-            <h2>Saldo awal</h2>
-            <p>Uang yang sudah kamu punya sebelum mulai mencatat.</p>
+            <h2>Saldo awal {balanceWallet.name}</h2>
+            <p>
+              Saldo awal sekarang dikelola per dompet.{" "}
+              <Link to="/dompet" className="text-link">
+                Kelola semua dompet →
+              </Link>
+            </p>
           </div>
           <form
             className="surface settings-content"
@@ -531,7 +541,7 @@ export default function Settings() {
         onClose={() => setResetRevision(null)}
         busy={resetBusy}
         title="Hapus seluruh data lokal?"
-        description={`${ledger.transactions.length} transaksi, seluruh kategori, dan saldo awal ${money(ledger.preferences.openingBalance, ledger.preferences.hideAmounts)} akan dihapus. Pemulihan hanya tersedia lewat file backup milikmu.`}
+        description={`${ledger.transactions.length} transaksi, seluruh dompet, transfer, anggaran, jadwal, dan target akan dihapus. Pemulihan hanya tersedia lewat file backup milikmu.`}
       >
         <div className="notice notice-warning">
           Pastikan file backup sudah disimpan di lokasi lain. Tindakan ini tidak
