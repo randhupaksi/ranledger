@@ -1,0 +1,855 @@
+/* Ranledger 2 — extend the ledger's green, paper, and ruled-list vocabulary. */
+.sidebar {
+  padding-top: 26px;
+  overflow-y: auto;
+}
+.workspace-label {
+  margin-top: 30px;
+}
+.desktop-nav {
+  gap: 2px;
+}
+.nav-item {
+  padding: 11px 12px;
+}
+.sidebar-add {
+  margin-top: 18px;
+}
+.sidebar-bottom {
+  padding-top: 22px;
+}
+.sidebar-privacy {
+  margin-bottom: 18px;
+}
+.sidebar-privacy > svg,
+.sidebar-privacy p {
+  display: none;
+}
+.sidebar-privacy a {
+  margin-top: 8px;
+}
+.heading-actions {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.numeric,
+.ledger-statement strong,
+.goal-figures strong {
+  font-variant-numeric: tabular-nums;
+}
+.editor-fields {
+  display: grid;
+  gap: 17px;
+}
+.editor-fields .field {
+  margin: 0;
+}
+.check-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+.check-line input,
+.csv-table input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  min-height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+}
+.editor-fields input,
+.editor-fields textarea {
+  width: 100%;
+}
+.ledger-statement {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 0 27px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid var(--line);
+}
+.ledger-statement > div {
+  display: grid;
+  gap: 8px;
+}
+.ledger-statement span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.ledger-statement strong {
+  font-size: clamp(26px, 3vw, 37px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.ledger-statement p {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.wallet-register,
+.transfer-register,
+.budget-register,
+.schedule-register,
+.goal-register {
+  overflow: hidden;
+}
+.transfer-register {
+  margin-top: 30px;
+}
+.register-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, 0.7fr) auto 16px;
+  align-items: center;
+  gap: 22px;
+  text-align: left;
+  padding: 20px 25px;
+  width: 100%;
+  background: transparent;
+  border-top: 1px solid var(--line);
+}
+.register-row:hover {
+  background: var(--surface-alt);
+}
+.register-row > div {
+  min-width: 0;
+}
+.register-row strong {
+  font-weight: 550;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.register-row small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.register-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+.register-row > svg {
+  color: var(--muted);
+}
+.planning-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 20px 0;
+  border-block: 1px solid var(--line);
+}
+.planning-toolbar .field {
+  margin: 0;
+  min-width: 180px;
+  max-width: 260px;
+}
+.plan-overview {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 26px 0 18px;
+}
+.plan-overview h2 {
+  font-size: 16px;
+  font-weight: 550;
+}
+.plan-overview p {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+.budget-line,
+.goal-line {
+  padding: 25px 27px;
+}
+.budget-line + .budget-line,
+.goal-line + .goal-line {
+  border-top: 1px solid var(--line);
+}
+.budget-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.budget-heading h3 {
+  font-weight: 550;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.budget-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.budget-figures {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 21px 0 11px;
+}
+.budget-figures strong {
+  font-size: 15px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.budget-figures strong > span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.budget-figures > span {
+  font-size: 11px;
+}
+.progress-meter {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  background: var(--line);
+  border-radius: 2px;
+}
+.progress-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  border-radius: inherit;
+}
+.progress-meter.warning > span {
+  background: var(--expense);
+}
+.warning-text {
+  color: var(--warning);
+}
+.budget-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 11px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.planning-empty {
+  padding: 52px 28px;
+}
+.planning-empty h2 {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 550;
+}
+.planning-empty p {
+  max-width: 460px;
+  margin: 8px auto 0;
+  font-size: 12px;
+}
+.planning-empty .button {
+  margin-top: 22px;
+}
+.planning-tabs {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--line);
+  margin-top: 3px;
+}
+.planning-tabs a {
+  padding: 10px 0 14px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.planning-tabs a.active {
+  color: var(--brand);
+  font-weight: 600;
+  border-bottom-color: var(--brand);
+}
+.schedule-line {
+  display: grid;
+  grid-template-columns: minmax(135px, 0.6fr) minmax(170px, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 25px;
+}
+.schedule-line + .schedule-line {
+  border-top: 1px solid var(--line);
+}
+.schedule-line.is-due {
+  border-left: 3px solid var(--brand);
+  padding-left: 22px;
+}
+.schedule-date strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.schedule-date span {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+  font-size: 10px;
+}
+.schedule-line.is-due .schedule-date span {
+  color: var(--warning);
+}
+.schedule-info h3 {
+  font-size: 14px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.schedule-info p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 5px 0 10px;
+}
+.schedule-info > strong {
+  font-size: 14px;
+  font-weight: 550;
+}
+.row-actions {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.goal-figures {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  margin: 23px 0 14px;
+}
+.goal-figures strong {
+  font-size: 26px;
+  font-weight: 550;
+  letter-spacing: -0.6px;
+}
+.goal-figures > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.wallet-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 30px;
+  row-gap: 16px;
+  padding: 21px 2px 28px;
+}
+.wallet-inline > a:not(.text-link) {
+  display: grid;
+  gap: 5px;
+}
+.wallet-inline > a > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.wallet-inline > a > strong {
+  font-size: 12px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-inline > .text-link {
+  margin-left: auto;
+}
+.planning-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 30px;
+}
+.planning-overview-column {
+  padding: 0 23px 18px;
+  min-width: 0;
+}
+.planning-overview-column + .planning-overview-column {
+  border-left: 1px solid var(--line);
+}
+.planning-overview-column .section-heading {
+  padding: 23px 0 18px;
+}
+.planning-overview-column .section-heading h2 {
+  font-size: 14px;
+}
+.brief-empty {
+  padding: 8px 0 12px;
+  font-size: 12px;
+}
+.brief-empty > span {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 11px;
+}
+.brief-empty > a {
+  display: inline-flex;
+  margin-top: 18px;
+}
+.brief-budget {
+  display: block;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+.brief-budget > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+.brief-budget strong {
+  font-weight: 500;
+  font-size: 12px;
+}
+.brief-budget span,
+.brief-budget small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.brief-budget small {
+  display: block;
+  margin-top: 7px;
+}
+.brief-schedule {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.brief-schedule strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.brief-schedule small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.brief-schedule > span {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.goal-brief {
+  margin-bottom: 30px;
+}
+.goal-brief > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 15px;
+}
+.goal-brief h2 {
+  font-size: 15px;
+}
+.goal-brief-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  gap: 20px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.goal-brief-row > strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.goal-brief-row > span {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.goal-brief-row small {
+  color: var(--muted);
+}
+.report-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.report-filters .field {
+  margin: 0;
+}
+.report-filters .field > label,
+.filter-controls .field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.filter-controls .field {
+  margin: 0;
+}
+.report-budgets {
+  margin-bottom: 25px;
+  overflow: hidden;
+}
+.report-budget-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(80px, 1fr) auto;
+  gap: 22px;
+  padding: 18px 25px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.report-budget-row strong {
+  font-weight: 500;
+  font-size: 12px;
+}
+.report-budget-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.report-budget-row > span {
+  font-variant-numeric: tabular-nums;
+}
+.import-steps {
+  list-style: none;
+  display: flex;
+  padding: 0 0 23px;
+  margin: 0 0 25px;
+  gap: 28px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.import-steps li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.import-steps .current {
+  color: var(--brand);
+  font-weight: 600;
+}
+.csv-source,
+.csv-mapping,
+.csv-preview {
+  margin-bottom: 25px;
+  min-width: 0;
+  overflow: hidden;
+}
+.csv-source .section-heading h2 {
+  overflow-wrap: anywhere;
+}
+.csv-source-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 17px 25px;
+  border-top: 1px solid var(--line);
+}
+.csv-source-foot p {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 620px;
+}
+.csv-source-foot button {
+  flex-shrink: 0;
+}
+.csv-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 0 25px 25px;
+}
+.csv-fields .field {
+  margin: 0;
+  min-width: 0;
+}
+.table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+.csv-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 11px;
+}
+.csv-table th {
+  color: var(--muted);
+  background: var(--surface-alt);
+  font-weight: 500;
+  padding: 12px 15px;
+  border-block: 1px solid var(--line);
+}
+.csv-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--line);
+  max-width: 340px;
+  overflow-wrap: anywhere;
+}
+.csv-table td strong {
+  display: block;
+  font-weight: 500;
+  font-size: 12px;
+}
+.csv-table td small {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.csv-table .radix-select-trigger {
+  width: 190px;
+}
+.csv-preview .inline-help {
+  border-bottom: 1px solid var(--line);
+}
+.more-menu {
+  display: flex;
+  flex-direction: column;
+}
+.more-menu a {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.more-menu a > svg:first-child {
+  color: var(--brand);
+}
+.more-menu a > svg:last-child {
+  margin-left: auto;
+  color: var(--muted);
+}
+.more-menu a:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 1100px) {
+  .schedule-line {
+    grid-template-columns: 120px 1fr;
+    gap: 18px;
+  }
+  .schedule-line .row-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .csv-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .register-row {
+    grid-template-columns: 1fr auto 16px;
+  }
+  .register-meta {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .mobile-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: var(--muted);
+    min-height: 46px;
+    border-radius: 6px;
+    font-size: 9px;
+    background: transparent;
+  }
+  .mobile-nav button.active {
+    color: var(--brand);
+    font-weight: 600;
+    background: var(--brand-soft);
+  }
+  .ledger-statement {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ledger-statement p {
+    max-width: none;
+  }
+  .register-row {
+    gap: 12px;
+    padding: 19px 16px;
+    grid-template-columns: minmax(0, 1fr) auto 12px;
+  }
+  .register-row strong {
+    font-size: 12px;
+  }
+  .register-row small {
+    font-size: 10px;
+  }
+  .planning-toolbar {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .planning-toolbar .field {
+    min-width: 0;
+    flex: 1;
+  }
+  .plan-overview {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .plan-overview h2 {
+    font-size: 15px;
+  }
+  .plan-overview > .tabs {
+    flex-basis: 100%;
+  }
+  .budget-line,
+  .goal-line {
+    padding: 22px 17px;
+  }
+  .budget-figures {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 18px;
+  }
+  .budget-figures strong {
+    font-size: 14px;
+  }
+  .budget-heading h3 {
+    font-size: 14px;
+  }
+  .budget-foot {
+    align-items: flex-start;
+    font-size: 10px;
+  }
+  .planning-empty {
+    padding: 35px 20px;
+  }
+  .planning-empty h2 {
+    font-size: 17px;
+  }
+  .schedule-line {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+    gap: 14px;
+  }
+  .schedule-line.is-due {
+    padding-left: 15px;
+  }
+  .schedule-date {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .schedule-date span {
+    margin-top: 0;
+  }
+  .schedule-line .row-actions {
+    grid-column: 1;
+  }
+  .goal-figures {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .goal-figures strong {
+    font-size: 23px;
+  }
+  .wallet-inline {
+    column-gap: 23px;
+    padding: 20px 0 23px;
+  }
+  .wallet-inline > a > strong {
+    font-size: 11px;
+  }
+  .wallet-inline > .text-link {
+    margin-left: 0;
+  }
+  .planning-overview {
+    grid-template-columns: 1fr;
+    margin-bottom: 25px;
+  }
+  .planning-overview-column {
+    padding: 0 17px 14px;
+  }
+  .planning-overview-column + .planning-overview-column {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .planning-overview-column .section-heading {
+    padding-top: 19px;
+  }
+  .goal-brief-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .goal-brief-row .progress-meter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .goal-brief-row > span {
+    text-align: right;
+    font-size: 10px;
+  }
+  .report-filters {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .report-budget-row {
+    grid-template-columns: 1fr auto;
+    padding: 16px;
+    gap: 10px;
+  }
+  .report-budget-row .progress-meter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .report-budget-row > span {
+    font-size: 10px;
+    text-align: right;
+  }
+  .import-steps {
+    font-size: 10px;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .import-steps li {
+    gap: 5px;
+    align-items: flex-start;
+  }
+  .csv-source-foot {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 13px;
+    padding: 16px;
+  }
+  .csv-fields {
+    padding: 0 16px 20px;
+    gap: 16px;
+  }
+  .csv-preview > .section-heading,
+  .csv-source > .section-heading {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+@media (max-width: 420px) {
+  .csv-fields {
+    grid-template-columns: 1fr;
+  }
+  .editor-fields .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .planning-toolbar {
+    align-items: stretch;
+  }
+  .planning-toolbar > .field {
+    flex-basis: calc(50% - 6px);
+  }
+}
