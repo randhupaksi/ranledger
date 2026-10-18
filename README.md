@@ -2,6 +2,8 @@
 
 Aplikasi keuangan pribadi berbahasa Indonesia untuk mencatat pemasukan dan pengeluaran tanpa akun. Catatan disimpan di browser pada perangkat pengguna. Tidak ada backend, analytics, session replay, atau sinkronisasi cloud.
 
+Versi **2.0.0** menambahkan dompet dan transfer, anggaran bulanan, transaksi rutin, target tabungan, serta impor CSV. Aturan produk, migrasi v1, dan kompatibilitas backup dijelaskan di [panduan Ranledger 2.0](docs/ranledger-2.0.md).
+
 ## Menjalankan aplikasi
 
 Gunakan Node.js **24 LTS** (sesuai `.nvmrc`) dan npm. Dependency dikunci dengan versi exact dan `package-lock.json`.
@@ -24,9 +26,13 @@ Penyimpanan terikat ke alamat situs (protokol, host, dan port), selain browser/p
 
 ## Fitur
 
-- **Beranda:** saldo tercatat, saldo awal, ringkasan periode, transaksi terakhir, rincian pengeluaran, dan pengingat backup setelah tujuh hari.
+- **Beranda:** saldo gabungan/per dompet, anggaran bulan ini, jadwal berikutnya, progres target, ringkasan periode, transaksi terakhir, rincian pengeluaran, dan pengingat backup setelah tujuh hari.
+- **Dompet:** tunai/bank/e-wallet/tabungan, saldo awal per dompet, arsip, dan transfer antar dompet yang tidak dihitung sebagai arus kas.
+- **Anggaran:** batas bulanan per kategori dan cakupan dompet, progres, sisa anggaran, status mendekati/melewati batas, serta riwayat bulan sebelumnya.
+- **Rencana:** transaksi rutin mingguan/bulanan/tahunan dengan konfirmasi catat/lewati, tanggal akhir dan jeda; target tabungan dengan progres dari saldo dompet khusus.
+- **Impor CSV:** pemetaan kolom, format tanggal/angka eksplisit, nominal bertanda atau debit/kredit, kategori default/per baris, penanda duplikat, pratinjau, dan penulisan atomik. Parsing berjalan di worker; maksimal 16 MB.
 - **Transaksi:** pemasukan/pengeluaran, edit, konfirmasi hapus, pencarian catatan/kategori, filter tanggal/jenis/kategori, pagination 30 baris, dan laporan Excel sesuai filter.
-- **Laporan:** angka pemasukan, pengeluaran, selisih, grafik arus kas dengan penjelasan teks, kategori pengeluaran, perbandingan periode, dan tautan ke transaksi pembentuk angka.
+- **Laporan:** angka pemasukan, pengeluaran, selisih, filter dompet, grafik arus kas dengan penjelasan teks, kategori pengeluaran, perbandingan periode, realisasi anggaran, dan tautan ke transaksi pembentuk angka.
 - **Backup & pemulihan:** backup lengkap JSON/Excel, pratinjau, gabung/ganti, deteksi ID ganda/konflik, validasi referensi, pemeriksaan hasil pemulihan, serta uji contoh terpisah dari catatan asli.
 - **Pengaturan:** tema terang/gelap/perangkat, format tanggal, sembunyikan nominal, saldo awal, tambah/ubah/arsip/aktifkan kategori, informasi penyimpanan, permintaan persistensi browser, dan reset dengan konfirmasi ketik.
 - **Responsif:** navigasi samping desktop, navigasi bawah mobile, formulir sebagai panel bawah di HP, label aksesibel, focus trap dan Escape pada dialog, skip link, serta reduced motion.
@@ -37,11 +43,11 @@ Pada desktop, tekan **N** saat tidak sedang mengisi kontrol untuk membuka pencat
 
 Mata uang MVP adalah IDR dalam rupiah bulat, tanpa desimal. Nominal transaksi harus positif, maksimal Rp1 triliun per transaksi. Tanda jenis disimpan terpisah dari nominal. Input berformat `25.000` dan `25000` diterima; `1.5` dan `1,5` ditolak.
 
-**Saldo tercatat = saldo awal + seluruh pemasukan − seluruh pengeluaran.** Saldo awal bisa negatif dan tidak masuk ke pemasukan laporan. Seluruh transaksi yang dicatat, termasuk tanggal mendatang jika pengguna memilihnya, masuk ke saldo tercatat. Ringkasan periode menghitung transaksi sesuai rentang yang ditampilkan, terpisah dari saldo keseluruhan.
+**Saldo tercatat = jumlah saldo awal seluruh dompet + seluruh pemasukan − seluruh pengeluaran.** Saldo awal bisa negatif dan tidak masuk ke pemasukan laporan. Transfer menurunkan saldo dompet asal dan menaikkan saldo dompet tujuan dengan jumlah sama; saldo gabungan tidak berubah. Dompet arsip tetap masuk ke saldo. Seluruh transaksi yang dicatat, termasuk tanggal mendatang jika pengguna memilihnya, masuk ke saldo tercatat. Ringkasan periode menghitung transaksi sesuai rentang yang ditampilkan, terpisah dari saldo keseluruhan.
 
 Tanggal transaksi disimpan sebagai kalender `YYYY-MM-DD` tanpa konversi UTC. Minggu dimulai Senin; hari/minggu/bulan/tahun aktif berakhir pada hari ini. Periode lain bisa dipilih melalui rentang khusus. Timestamp pembuatan/perubahan hanya dipakai untuk metadata dan pengurutan stabil.
 
-Jumlah pemasukan, pengeluaran, dan saldo diperiksa terhadap batas integer aman JavaScript. Maksimal 100.000 transaksi dan 1.000 kategori. Catatan dengan nominal besar dapat mencapai batas total sebelum batas jumlah transaksi; operasi akan ditolak dengan pesan tanpa merusak data.
+Jumlah pemasukan, pengeluaran, dan saldo diperiksa terhadap batas integer aman JavaScript. Maksimal 100.000 transaksi dan transfer gabungan, serta 1.000 kategori. Catatan dengan nominal besar dapat mencapai batas total sebelum batas jumlah transaksi; operasi akan ditolak dengan pesan tanpa merusak data.
 
 Kategori yang diarsipkan tetap tersedia di riwayat dan saat mengedit transaksi lama. Nama kategori diperbarui di seluruh riwayat berdasarkan referensi ID. Jenis kategori yang sudah dibuat tidak diubah.
 
@@ -49,9 +55,9 @@ Kategori yang diarsipkan tetap tersedia di riwayat dan saat mengedit transaksi l
 
 **Ekspor laporan** mengikuti filter dan hanya untuk dibaca. **Backup lengkap** selalu mencakup seluruh transaksi, kategori (termasuk arsip), saldo awal, dan preferensi. Gunakan JSON sebagai salinan utama. Backup tidak dienkripsi; simpan dengan hati-hati di lokasi yang kamu percaya.
 
-Format backup v1 memiliki identitas `ranledger`, `formatVersion`, `currency`, dan `exportedAt`. Excel memakai empat lembar: `Ranledger`, `Transaksi`, `Kategori`, dan `Pengaturan`. Kolom, jenis nilai, dan ID harus tetap utuh agar dapat dipulihkan; file Excel umum bukan format impor MVP. Sel teks seperti catatan yang diawali `=` diekspor sebagai teks, bukan rumus. File yang berisi rumus atau VBA ditolak.
+Format backup v2 memiliki identitas `ranledger`, `formatVersion`, `currency`, dan `exportedAt`. Excel memakai sembilan lembar: `Ranledger`, `Transaksi`, `Kategori`, `Pengaturan`, `Dompet`, `Transfer`, `Anggaran`, `Jadwal`, dan `Tujuan`. Backup JSON/Excel v1 tetap dapat diimpor; saldo awal dan transaksi lama dipetakan ke dompet Utama. Kolom, jenis nilai, dan ID harus tetap utuh agar dapat dipulihkan. File Excel umum bukan format pemulihan; gunakan impor CSV untuk data dari aplikasi lain. Sel teks seperti catatan yang diawali `=` diekspor sebagai teks, bukan rumus. File yang berisi rumus atau VBA ditolak.
 
-- **Gabung:** transaksi ber-ID baru ditambahkan. ID yang sudah ada dilewati dan versi lokal dipertahankan, termasuk ketika isi berbeda; jumlah konflik ditampilkan. Saldo awal dan preferensi lokal dipertahankan. Kategori dengan ID sama memakai versi lokal; kategori baru bernama/berjenis sama diarahkan ke kategori lokal. Jenis kategori yang bertentangan ditolak. Isi sama dengan ID berbeda tetap merupakan transaksi berbeda.
+- **Gabung:** transaksi ber-ID baru ditambahkan. ID yang sudah ada dilewati dan versi lokal dipertahankan, termasuk ketika isi berbeda; jumlah konflik ditampilkan. Dompet dengan ID/nama sama memakai saldo awal lokal; dompet baru membawa saldo awalnya. Preferensi lokal dipertahankan. Kategori dengan ID sama memakai versi lokal; kategori baru bernama/berjenis sama diarahkan ke kategori lokal. Jenis kategori yang bertentangan ditolak. Konflik anggaran dan target pada dompet sama memakai versi lokal. Kunci kejadian jadwal mencegah transaksi rutin ganda. Isi sama dengan ID berbeda tetap merupakan transaksi berbeda untuk transaksi biasa.
 - **Ganti:** transaksi, kategori, saldo awal, dan preferensi diganti seluruhnya dari file. Diperlukan pratinjau dan ketikan `GANTI`. Backup lokal tersedia sebelum melanjutkan.
 
 Impor berjalan dalam satu transaksi IndexedDB. Kegagalan validasi, penulisan, atau verifikasi membatalkan seluruh perubahan. Hasil dibaca dan dibandingkan sebelum sukses diumumkan. Perubahan di tab lain setelah pratinjau mengharuskan pengguna memperbarui pratinjau. Edit/hapus transaksi yang sudah berubah di tab lain juga ditolak.
@@ -62,9 +68,12 @@ Batas file impor adalah 256 MB untuk JSON dan 32 MB untuk Excel, dengan batas ba
 
 | Lokasi | Tanggung jawab |
 | --- | --- |
-| `src/domain/ledger.ts` | Schema, validasi uang/tanggal, perhitungan dan filter |
+| `src/domain/ledger.ts` | Tipe, validasi uang/tanggal, perhitungan dan filter |
+| `src/domain/validation.ts` | Schema dan integritas referensi ledger v2 |
+| `src/domain/planning.ts` | Saldo dompet, progres anggaran dan kejadian jadwal |
 | `src/data/database.ts` | Penyimpanan Dexie, operasi atomik, konflik antar-tab |
-| `src/data/backup.ts` | Format v1, Excel/JSON, perencanaan impor dan unduhan |
+| `src/data/backup.ts` | Format v2, kompatibilitas v1, Excel/JSON, perencanaan impor dan unduhan |
+| `src/data/csv.ts`, `csv.worker.ts` | Parser, pemetaan, deteksi duplikat dan worker impor CSV |
 | `src/components` | Konteks data, dialog aksesibel dan pola tampilan bersama |
 | `src/features` | Beranda, transaksi, laporan, backup dan pengaturan |
 | `src/style.css` | Token terang/gelap, tampilan halaman dan responsivitas |
