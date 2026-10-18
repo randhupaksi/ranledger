@@ -23,6 +23,7 @@ function tx(
     amount,
     kind,
     categoryId: kind === "income" ? "salary" : "food",
+    walletId: "main-wallet",
     date,
     note: "catatan",
     createdAt: at,

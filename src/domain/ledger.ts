@@ -19,13 +19,14 @@ export interface Transaction {
   kind: TransactionKind;
   amount: number;
   categoryId: string;
+  walletId: string;
+  occurrenceKey?: string;
   date: string;
   note: string;
   createdAt: string;
   updatedAt: string;
 }
 export interface Preferences {
-  openingBalance: number;
   theme: Theme;
   dateFormat: DateFormat;
   hideAmounts: boolean;
@@ -35,8 +36,81 @@ export interface Preferences {
 export interface Ledger {
   transactions: Transaction[];
   categories: Category[];
+  wallets: Wallet[];
+  transfers: Transfer[];
+  budgets: Budget[];
+  schedules: RecurringSchedule[];
+  goals: SavingsGoal[];
   preferences: Preferences;
   revision: number;
+}
+export type WalletType = "cash" | "bank" | "ewallet" | "savings";
+export interface Wallet {
+  id: string;
+  name: string;
+  type: WalletType;
+  openingBalance: number;
+  archived: boolean;
+  updatedAt: string;
+}
+export interface Transfer {
+  id: string;
+  sourceWalletId: string;
+  targetWalletId: string;
+  amount: number;
+  date: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Budget {
+  id: string;
+  month: string;
+  categoryId: string;
+  walletId: string | null;
+  amount: number;
+  updatedAt: string;
+}
+export type Frequency = "weekly" | "monthly" | "yearly";
+export interface RecurringSchedule {
+  id: string;
+  name: string;
+  kind: TransactionKind;
+  amount: number;
+  categoryId: string;
+  walletId: string;
+  frequency: Frequency;
+  nextDate: string;
+  anchorDate: string;
+  endDate: string | null;
+  active: boolean;
+  updatedAt: string;
+}
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  walletId: string;
+  amount: number;
+  targetDate: string;
+  archived: boolean;
+  updatedAt: string;
+}
+export const DEFAULT_WALLET_ID = "main-wallet";
+export const walletTypes: Record<WalletType, string> = {
+  cash: "Tunai",
+  bank: "Rekening bank",
+  ewallet: "E-wallet",
+  savings: "Tabungan",
+};
+export function initialWallet(openingBalance = 0): Wallet {
+  return {
+    id: DEFAULT_WALLET_ID,
+    name: "Utama",
+    type: "cash",
+    openingBalance,
+    archived: false,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
 }
 export interface CategoryTotal {
   id: string;
@@ -54,7 +128,6 @@ export function validDate(value: string): boolean {
   return y >= 1900 && y <= 9999 && localDate(parsed) === value;
 }
 export const defaultPreferences: Preferences = {
-  openingBalance: 0,
   theme: "system",
   dateFormat: "long",
   hideAmounts: false,
@@ -84,6 +157,11 @@ export function emptyLedger(): Ledger {
   return {
     transactions: [],
     categories: defaultCategories.map((c) => ({ ...c })),
+    wallets: [initialWallet()],
+    transfers: [],
+    budgets: [],
+    schedules: [],
+    goals: [],
     preferences: { ...defaultPreferences },
     revision: 0,
   };
@@ -189,6 +267,7 @@ export interface Filters extends DateRange {
   kind: TransactionKind | "all";
   categoryId: string;
   search: string;
+  walletId?: string;
 }
 const sortedTransactions = new WeakMap<Transaction[], Transaction[]>();
 function orderedTransactions(transactions: Transaction[]) {
@@ -216,6 +295,7 @@ export function filterTransactions(
       transaction.date <= filter.end &&
       (filter.kind === "all" || transaction.kind === filter.kind) &&
       (!filter.categoryId || transaction.categoryId === filter.categoryId) &&
+      (!filter.walletId || transaction.walletId === filter.walletId) &&
       (!search ||
         `${transaction.note} ${names.get(transaction.categoryId) ?? ""}`
           .toLocaleLowerCase("id-ID")
@@ -239,9 +319,32 @@ export function categoryTotals(
     .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
 }
 export function errorMessage(error: unknown): string {
-  if (error instanceof Error && error.name === "ZodError")
-    return "Isi data tidak sesuai format Ranledger. Periksa nominal, tanggal, kategori, dan versi file.";
+  if (error instanceof Error && error.name === "ZodError") {
+    const issues = (error as Error & { issues?: { path: unknown[] }[] }).issues;
+    const field = String(issues?.[0]?.path[0] ?? "");
+    const labels: Record<string, string> = {
+      name: "nama",
+      amount: "nominal",
+      openingBalance: "saldo awal",
+      date: "tanggal",
+      nextDate: "tanggal jadwal berikutnya",
+      anchorDate: "tanggal awal jadwal",
+      endDate: "tanggal akhir",
+      targetDate: "tanggal target",
+      month: "bulan anggaran",
+      walletId: "dompet",
+      sourceWalletId: "dompet asal",
+      targetWalletId: "dompet tujuan",
+      categoryId: "kategori",
+      note: "catatan (maksimal 500 karakter)",
+    };
+    return labels[field]
+      ? `Periksa ${labels[field]}. Isi nilai yang valid sesuai format pada formulir.`
+      : "Isi data tidak sesuai format Ranledger. Periksa nominal, tanggal, kategori, dan versi file.";
+  }
   if (error instanceof Error) {
+    if (/versionerror/i.test(error.name + error.message))
+      return "Versi Ranledger berubah di tab lain. Muat ulang halaman agar sesuai dengan penyimpanan terbaru.";
     if (/quota/i.test(error.name + error.message))
       return "Penyimpanan perangkat penuh. Buat backup, kosongkan ruang perangkat, lalu coba lagi.";
     if (
