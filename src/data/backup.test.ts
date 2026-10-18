@@ -10,6 +10,7 @@ import {
   readBackupFile,
 } from "./backup";
 import { emptyLedger, totals } from "../domain/ledger";
+import { ledgerTotals } from "../domain/planning";
 
 describe("backup JSON dan Excel", () => {
   it("backup Excel kosong tetap bisa dipulihkan lengkap", async () => {
@@ -24,10 +25,7 @@ describe("backup JSON dan Excel", () => {
     const parsed = parseBackup(JSON.parse(JSON.stringify(example)));
     const plan = makeImportPlan(emptyLedger(), parsed, "replace");
     expect(createBackup(plan.ledger, example.exportedAt)).toEqual(example);
-    expect(
-      totals(plan.ledger.transactions, plan.ledger.preferences.openingBalance)
-        .balance,
-    ).toBe(2_915_000);
+    expect(ledgerTotals(plan.ledger).balance).toBe(2_915_000);
   });
   it("Excel roundtrip identik bahkan catatan seperti rumus/HTML tetap teks", async () => {
     const example = exampleBackup();
@@ -45,7 +43,7 @@ describe("backup JSON dan Excel", () => {
     const sample = exampleBackup();
     const first = makeImportPlan(emptyLedger(), sample, "merge");
     expect(first.added).toBe(3);
-    expect(first.ledger.preferences.openingBalance).toBe(0);
+    expect(first.ledger.wallets[0].openingBalance).toBe(0);
     first.ledger.transactions[0].amount = 9_000_000;
     const second = makeImportPlan(first.ledger, sample, "merge");
     expect(second.added).toBe(0);

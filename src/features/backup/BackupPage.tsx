@@ -31,9 +31,9 @@ import {
   errorMessage,
   localDate,
   money,
-  totals,
 } from "../../domain/ledger";
 import type { Ledger } from "../../domain/ledger";
+import { ledgerTotals } from "../../domain/planning";
 
 interface Preview {
   backup: Backup;
@@ -226,8 +226,8 @@ export default function BackupPage() {
           <div>
             <h2>Buat backup lengkap</h2>
             <p>
-              Seluruh transaksi, kategori, saldo awal, dan preferensi. Tidak
-              mengikuti filter layar.
+              Seluruh transaksi, dompet, transfer, anggaran, jadwal, target,
+              kategori, dan preferensi. Tidak mengikuti filter layar.
             </p>
           </div>
         </div>
@@ -341,13 +341,7 @@ export default function BackupPage() {
               <div>
                 <span>Saldo dalam backup</span>
                 <strong>
-                  {money(
-                    totals(
-                      preview.backup.transactions,
-                      preview.backup.preferences.openingBalance,
-                    ).balance,
-                    hidden,
-                  )}
+                  {money(ledgerTotals(preview.backup).balance, hidden)}
                 </strong>
               </div>
             </div>
@@ -372,7 +366,9 @@ export default function BackupPage() {
                   <small>
                     Tambahkan ID baru. ID yang sudah ada memakai catatan lokal,
                     termasuk jika isinya berbeda. Saldo awal dan preferensi
-                    lokal dipertahankan.
+                    dompet dan preferensi lokal dipertahankan. Dompet baru
+                    membawa saldo awalnya; anggaran atau target yang bertabrakan
+                    memakai versi lokal.
                   </small>
                 </span>
               </label>
@@ -386,8 +382,9 @@ export default function BackupPage() {
                 <span>
                   <strong>Ganti semua data</strong>
                   <small>
-                    Seluruh transaksi, kategori, saldo awal, dan preferensi
-                    lokal diganti dengan isi file. Buat backup lokal lebih dulu.
+                    Seluruh transaksi, dompet, transfer, anggaran, jadwal,
+                    target, kategori, dan preferensi lokal diganti dengan isi
+                    file. Buat backup lokal lebih dulu.
                   </small>
                 </span>
               </label>
@@ -411,13 +408,21 @@ export default function BackupPage() {
                   Saldo setelah pemulihan:{" "}
                   <strong>
                     {money(
-                      totals(
-                        planResult.plan.ledger.transactions,
-                        planResult.plan.ledger.preferences.openingBalance,
-                      ).balance,
+                      ledgerTotals(planResult.plan.ledger).balance,
                       hidden,
                     )}
                   </strong>
+                  .
+                </p>
+                <p>
+                  {planResult.plan.features.wallets} dompet ·{" "}
+                  {planResult.plan.features.transfers} transfer ·{" "}
+                  {planResult.plan.features.budgets} anggaran ·{" "}
+                  {planResult.plan.features.schedules} jadwal ·{" "}
+                  {planResult.plan.features.goals} target{" "}
+                  {mode === "merge"
+                    ? "baru akan ditambahkan"
+                    : "akan dipulihkan"}
                   .
                 </p>
               </div>
@@ -512,7 +517,7 @@ export default function BackupPage() {
         description={
           mode === "replace"
             ? `${ledger.transactions.length} transaksi lokal akan diganti. Perubahan ini hanya bisa dipulihkan dari backup yang kamu simpan.`
-            : "ID yang sudah ada akan dilewati. Catatan baru ditambahkan tanpa mengubah saldo awal dan preferensi lokal."
+            : "ID yang sudah ada memakai versi lokal. Dompet baru membawa saldo awalnya. Preferensi lokal dipertahankan."
         }
       >
         {mode === "replace" && (
