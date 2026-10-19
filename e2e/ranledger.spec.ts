@@ -162,7 +162,7 @@ test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", asyn
   await upload(page, JSON.stringify(exampleBackup()));
   await expect(page.getByText("Format file valid")).toBeVisible();
   await replaceFromBackup(page);
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".toast[role='status']")).toContainText(
     "3 transaksi dipulihkan",
   );
   const jsonDownload = page.waitForEvent("download");
@@ -181,7 +181,7 @@ test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", asyn
   await expect(page.getByText("Format file valid")).toBeVisible();
   await page.getByRole("button", { name: "Lanjutkan pemulihan" }).click();
   await page.getByRole("button", { name: "Gabungkan sekarang" }).click();
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".toast[role='status']")).toContainText(
     "0 transaksi ditambahkan, 3 ID",
   );
   await upload(page, "{broken", "bad.json");
