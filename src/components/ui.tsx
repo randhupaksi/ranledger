@@ -1,8 +1,8 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
+  ArrowLeft,
+  ArrowRight,
   Plus,
 } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
@@ -163,9 +163,9 @@ export function KindIcon({ kind }: { kind: "income" | "expense" }) {
   return (
     <span className={`kind-icon ${kind}`}>
       {kind === "income" ? (
-        <ArrowDownLeft size={19} />
+        <ArrowDownLeft size={14} />
       ) : (
-        <ArrowUpRight size={19} />
+        <ArrowUpRight size={14} />
       )}
     </span>
   );
@@ -246,7 +246,7 @@ export function TransactionList({
             {t.kind === "income" || t.refund ? "+" : "−"}
             {money(t.amount, ledger.preferences.hideAmounts)}
           </span>
-          <ChevronRight size={15} className="row-chevron" />
+          <ArrowRight size={14} className="row-arrow" aria-hidden="true" />
         </button>
       ))}
     </div>
@@ -377,7 +377,7 @@ export function Pagination({
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
         >
-          <ChevronLeft size={18} />
+          <ArrowLeft size={18} aria-hidden="true" />
         </button>
         <span>
           {page} / {pages}
@@ -388,7 +388,7 @@ export function Pagination({
           disabled={page >= pages}
           onClick={() => onChange(page + 1)}
         >
-          <ChevronRight size={18} />
+          <ArrowRight size={18} aria-hidden="true" />
         </button>
       </div>
     </div>

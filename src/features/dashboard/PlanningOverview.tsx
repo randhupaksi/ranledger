@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
+import { ArrowRight } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
 import { ProgressMeter } from "../../components/planning-ui";
 import { dateLabel, localDate, money } from "../../domain/ledger";
@@ -41,7 +42,7 @@ export default function PlanningOverview() {
             </Link>
           ))}
         <Link to="/dompet" className="text-link">
-          Kelola dompet →
+          Kelola dompet <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </div>
       <section className="surface planning-overview">
@@ -52,7 +53,7 @@ export default function PlanningOverview() {
               <p>Anggaran per kategori</p>
             </div>
             <Link className="text-link" to="/anggaran">
-              Atur →
+              Atur <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {budgets.length ? (
@@ -99,7 +100,8 @@ export default function PlanningOverview() {
               <p>Belum ada batas pengeluaran.</p>
               <span>Mulai dari satu kategori yang ingin kamu kendalikan.</span>
               <Link className="text-link" to="/anggaran">
-                Buat anggaran pertama →
+                Buat anggaran pertama{" "}
+                <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
           )}
@@ -111,7 +113,7 @@ export default function PlanningOverview() {
               <p>Tagihan dan pemasukan rutin</p>
             </div>
             <Link className="text-link" to="/rencana">
-              Lihat →
+              Lihat <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {upcoming.length ? (
@@ -124,7 +126,10 @@ export default function PlanningOverview() {
                     {s.nextDate <= localDate() ? " · Perlu konfirmasi" : ""}
                   </small>
                 </div>
-                <span className="numeric">{money(s.amount, hidden)}</span>
+                <span className={`numeric ${s.kind}`}>
+                  {s.kind === "income" ? "+" : "−"}
+                  {money(s.amount, hidden)}
+                </span>
               </Link>
             ))
           ) : (
@@ -132,7 +137,7 @@ export default function PlanningOverview() {
               <p>Tidak ada jadwal rutin.</p>
               <span>Susun gaji, tagihan, atau langgananmu di sini.</span>
               <Link className="text-link" to="/rencana">
-                Tambah jadwal →
+                Tambah jadwal <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
           )}
@@ -143,7 +148,7 @@ export default function PlanningOverview() {
           <div>
             <h2>Tujuan tabungan</h2>
             <Link className="text-link" to="/rencana/tujuan">
-              Semua target →
+              Semua target <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {goals.map((g) => (

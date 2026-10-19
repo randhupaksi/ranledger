@@ -60,6 +60,8 @@ export default function Transactions({
     ],
   );
   const summary = useMemo(() => totals(filtered), [filtered]);
+  const netTone =
+    summary.net > 0 ? "positive" : summary.net < 0 ? "negative" : "neutral";
   const page = Math.min(
     Math.max(1, Math.floor(Number(params.get("page")) || 1)),
     Math.max(1, Math.ceil(filtered.length / 30)),
@@ -191,10 +193,16 @@ export default function Transactions({
           </span>
           <span>
             Keluar{" "}
-            <b>{money(summary.expense, ledger.preferences.hideAmounts)}</b>
+            <b className="expense">
+              {money(summary.expense, ledger.preferences.hideAmounts)}
+            </b>
           </span>
           <span>
-            Selisih <b>{money(summary.net, ledger.preferences.hideAmounts)}</b>
+            Selisih{" "}
+            <b className={netTone}>
+              {summary.net > 0 ? "+" : ""}
+              {money(summary.net, ledger.preferences.hideAmounts)}
+            </b>
           </span>
         </div>
         {filtered.length ? (

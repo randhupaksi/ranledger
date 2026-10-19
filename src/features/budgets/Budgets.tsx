@@ -1,7 +1,7 @@
 import { EditorDialog } from "../../components/EditorDialog";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
 import { PageHeading } from "../../components/ui";
 import {
@@ -246,7 +246,8 @@ export default function Budgets() {
                     {money(Math.abs(p.remaining), hidden)}
                   </span>
                   <Link className="text-link" to={`/transaksi?${query}`}>
-                    Lihat pengeluaran →
+                    Lihat pengeluaran{" "}
+                    <ArrowRight size={14} aria-hidden="true" />
                   </Link>
                 </div>
               </div>

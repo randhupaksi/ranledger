@@ -160,6 +160,8 @@ export default function Reports() {
   );
   const summary = useMemo(() => totals(filtered), [filtered]);
   const hidden = ledger.preferences.hideAmounts;
+  const netTone =
+    summary.net > 0 ? "positive" : summary.net < 0 ? "negative" : "neutral";
   const categories = useMemo(
     () => categoryTotals(filtered, ledger.categories),
     [filtered, ledger.categories],
@@ -287,31 +289,40 @@ export default function Reports() {
       </div>
       <FinancialPosition range={range} walletId={walletId} />
       <section className="period-summary report-summary">
-        <Link to={`/transaksi?${query}&kind=income`} className="summary-item">
+        <Link
+          to={`/transaksi?${query}&kind=income`}
+          className="summary-item income-summary"
+        >
           <span className="summary-label">
-            <ArrowDownLeft size={17} />
+            <ArrowDownLeft size={14} />
             Pemasukan
           </span>
           <strong className="income">{money(summary.income, hidden)}</strong>
           <span>
             {filtered.filter((t) => t.kind === "income").length} transaksi{" "}
-            <ArrowRight size={14} />
+            <ArrowRight size={14} aria-hidden="true" />
           </span>
         </Link>
-        <Link to={`/transaksi?${query}&kind=expense`} className="summary-item">
+        <Link
+          to={`/transaksi?${query}&kind=expense`}
+          className="summary-item expense-summary"
+        >
           <span className="summary-label">
-            <ArrowUpRight size={17} />
+            <ArrowUpRight size={14} />
             Pengeluaran
           </span>
-          <strong>{money(summary.expense, hidden)}</strong>
+          <strong className="expense">{money(summary.expense, hidden)}</strong>
           <span>
             {filtered.filter((t) => t.kind === "expense").length} transaksi{" "}
-            <ArrowRight size={14} />
+            <ArrowRight size={14} aria-hidden="true" />
           </span>
         </Link>
-        <Link to={`/transaksi?${query}`} className="summary-item">
+        <Link
+          to={`/transaksi?${query}`}
+          className={`summary-item net-summary ${netTone}`}
+        >
           <span className="summary-label">Selisih periode</span>
-          <strong>
+          <strong className={netTone}>
             {summary.net > 0 ? "+" : ""}
             {money(summary.net, hidden)}
           </strong>
@@ -332,7 +343,7 @@ export default function Reports() {
               className="text-link"
               to={`/anggaran?month=${range.start.slice(0, 7)}`}
             >
-              Kelola →
+              Kelola <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {budgets.map((b) => {
@@ -458,7 +469,7 @@ export default function Reports() {
               )}
               <Link className="text-link" to={`/transaksi?${query}`}>
                 Telusuri semua {filtered.length} transaksi{" "}
-                <ArrowRight size={16} />
+                <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </section>
           </div>

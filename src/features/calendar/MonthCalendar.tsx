@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { monthLabel } from "../../domain/planning";
 import { dateLabel, localDate } from "../../domain/ledger";
 import type { CalendarItem } from "../../domain/forecast";
@@ -51,7 +51,7 @@ export function MonthCalendar({
             disabled={safeMonth <= start.slice(0, 7)}
             onClick={() => change(-1)}
           >
-            <ChevronLeft size={18} />
+            <ArrowLeft size={18} aria-hidden="true" />
           </button>
           <button
             className="icon-button"
@@ -59,7 +59,7 @@ export function MonthCalendar({
             disabled={safeMonth >= end.slice(0, 7)}
             onClick={() => change(1)}
           >
-            <ChevronRight size={18} />
+            <ArrowRight size={18} aria-hidden="true" />
           </button>
         </div>
       </div>

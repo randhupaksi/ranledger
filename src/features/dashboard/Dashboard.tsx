@@ -80,6 +80,8 @@ export default function Dashboard({
     start: range.start,
     end: range.end,
   });
+  const netTone =
+    summary.net > 0 ? "positive" : summary.net < 0 ? "negative" : "neutral";
   return (
     <>
       <PageHeading
@@ -112,7 +114,7 @@ export default function Dashboard({
                 .catch((e) => notify(errorMessage(e), true))
             }
           >
-            Mengerti <ArrowRight size={15} />
+            Mengerti <ArrowRight size={14} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -147,16 +149,16 @@ export default function Dashboard({
             <span>Saldo awal</span>
             <strong>{money(overall.balance - overall.net, hidden)}</strong>
           </div>
-          <div>
+          <div className="balance-income">
             <span>Total pemasukan</span>
             <strong>{money(overall.income, hidden)}</strong>
           </div>
-          <div>
+          <div className="balance-expense">
             <span>Total pengeluaran</span>
             <strong>−{money(overall.expense, hidden)}</strong>
           </div>
           <Link to="/dompet">
-            Kelola dompet <ArrowRight size={15} />
+            Kelola dompet <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
       </section>
@@ -172,29 +174,38 @@ export default function Dashboard({
         className="period-summary"
         aria-label="Ringkasan keuangan periode"
       >
-        <Link to={`/transaksi?${query}&kind=income`} className="summary-item">
+        <Link
+          to={`/transaksi?${query}&kind=income`}
+          className="summary-item income-summary"
+        >
           <span className="summary-label">
-            <ArrowDownLeft size={17} />
+            <ArrowDownLeft size={14} />
             Pemasukan
           </span>
           <strong className="income">{money(summary.income, hidden)}</strong>
           <span>
-            Lihat pemasukan <ArrowRight size={14} />
+            Lihat pemasukan <ArrowRight size={14} aria-hidden="true" />
           </span>
         </Link>
-        <Link to={`/transaksi?${query}&kind=expense`} className="summary-item">
+        <Link
+          to={`/transaksi?${query}&kind=expense`}
+          className="summary-item expense-summary"
+        >
           <span className="summary-label">
-            <ArrowUpRight size={17} />
+            <ArrowUpRight size={14} />
             Pengeluaran
           </span>
-          <strong>{money(summary.expense, hidden)}</strong>
+          <strong className="expense">{money(summary.expense, hidden)}</strong>
           <span>
-            Lihat pengeluaran <ArrowRight size={14} />
+            Lihat pengeluaran <ArrowRight size={14} aria-hidden="true" />
           </span>
         </Link>
-        <Link to={`/laporan?${query}`} className="summary-item">
+        <Link
+          to={`/laporan?${query}`}
+          className={`summary-item net-summary ${netTone}`}
+        >
           <span className="summary-label">Selisih periode</span>
-          <strong>
+          <strong className={netTone}>
             {summary.net > 0 ? "+" : ""}
             {money(summary.net, hidden)}
           </strong>
@@ -212,7 +223,7 @@ export default function Dashboard({
               </p>
             </div>
             <Link className="text-link" to={`/transaksi?${query}`}>
-              Lihat semua <ArrowRight size={15} />
+              Lihat semua <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           {filtered.length ? (
@@ -267,7 +278,7 @@ export default function Dashboard({
               browser.
             </small>
           </span>
-          <ArrowRight size={18} />
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
       )}
       <p className="page-footnote">

@@ -1,7 +1,7 @@
 import { EditorDialog } from "../../components/EditorDialog";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
 import { PageHeading } from "../../components/ui";
 import {
@@ -201,7 +201,7 @@ export default function Goals() {
                           : `Masih perlu ${money(remaining)}`}
                   </span>
                   <Link className="text-link" to="/dompet">
-                    Kelola dana →
+                    Kelola dana <ArrowRight size={14} aria-hidden="true" />
                   </Link>
                 </div>
               </div>

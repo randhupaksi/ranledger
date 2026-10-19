@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { FileUp } from "lucide-react";
+import { ArrowRight, FileUp } from "lucide-react";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { ErrorNotice, PageHeading, Pagination } from "../../components/ui";
 import { WalletPicker } from "../../components/planning-ui";
@@ -305,7 +305,7 @@ export default function ImportCsv() {
         <div className="notice" role="status">
           {success.toLocaleString("id-ID")} transaksi berhasil diimpor.{" "}
           <Link to="/transaksi" className="text-link">
-            Lihat transaksi →
+            Lihat transaksi <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
       )}
