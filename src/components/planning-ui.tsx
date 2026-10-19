@@ -2,6 +2,7 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { NavLink } from "react-router";
 import { SelectField } from "./SelectField";
 import { useLedger } from "./LedgerProvider";
+import { isLiability } from "../domain/finance";
 
 export function AmountField({
   label = "Nominal (Rp)",
@@ -106,6 +107,7 @@ export function WalletPicker({
   label = "Dompet",
   id,
   disabled,
+  assetOnly = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -114,6 +116,7 @@ export function WalletPicker({
   label?: string;
   id?: string;
   disabled?: boolean;
+  assetOnly?: boolean;
 }) {
   const ledger = useLedger();
   const generated = useId();
@@ -129,7 +132,11 @@ export function WalletPicker({
         options={[
           ...(all ? [{ value: "", label: "Semua dompet" }] : []),
           ...ledger.wallets
-            .filter((w) => all || !w.archived || w.id === archivedId)
+            .filter(
+              (w) =>
+                (!assetOnly || !isLiability(w)) &&
+                (all || !w.archived || w.id === archivedId),
+            )
             .map((w) => ({
               value: w.id,
               label: w.name + (w.archived ? " (arsip)" : ""),
@@ -179,6 +186,7 @@ export function PlanningTabs() {
         Transaksi rutin
       </NavLink>
       <NavLink to="/rencana/tujuan">Target tabungan</NavLink>
+      <NavLink to="/kalender">Kalender & proyeksi</NavLink>
     </nav>
   );
 }

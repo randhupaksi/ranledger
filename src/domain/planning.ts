@@ -8,7 +8,7 @@ export function walletBalances(ledger: Ledger): Map<string, number> {
       t.walletId,
       safeSum([
         balances.get(t.walletId) ?? 0,
-        t.kind === "income" ? t.amount : -t.amount,
+        t.kind === "income" || t.refund ? t.amount : -t.amount,
       ]),
     );
   for (const t of ledger.transfers) {
@@ -40,7 +40,10 @@ export function budgetProgresses(budgets: Budget[], ledger: Ledger) {
     if (t.kind !== "expense" || !months.has(month)) continue;
     for (const wallet of ["*", t.walletId]) {
       const key = `${month}:${t.categoryId}:${wallet}`;
-      usage.set(key, safeSum([usage.get(key) ?? 0, t.amount]));
+      usage.set(
+        key,
+        safeSum([usage.get(key) ?? 0, t.refund ? -t.amount : t.amount]),
+      );
     }
   }
   return new Map(

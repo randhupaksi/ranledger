@@ -14,6 +14,7 @@ import { db } from "../../data/database";
 import { dateLabel, localDate, money, parseAmount } from "../../domain/ledger";
 import type { SavingsGoal } from "../../domain/ledger";
 import { walletBalances } from "../../domain/planning";
+import { isLiability } from "../../domain/finance";
 
 function GoalEditor({
   goal,
@@ -28,7 +29,7 @@ function GoalEditor({
   const [walletId, setWalletId] = useState(
     goal?.walletId ??
       ledger.wallets.find((w) => !w.archived && w.type === "savings")?.id ??
-      ledger.wallets.find((w) => !w.archived)?.id ??
+      ledger.wallets.find((w) => !w.archived && !isLiability(w))?.id ??
       "",
   );
   const [amount, setAmount] = useState(
@@ -75,6 +76,7 @@ function GoalEditor({
         value={walletId}
         onChange={setWalletId}
         archivedId={goal?.walletId}
+        assetOnly
       />
       <AmountField
         label="Jumlah yang ingin dicapai (Rp)"

@@ -10,7 +10,11 @@ import {
   validDate,
 } from "../../domain/ledger";
 import type { Transaction, TransactionKind } from "../../domain/ledger";
-import { useLedger, useNotify } from "../../components/LedgerProvider";
+import {
+  useLedger,
+  useNotify,
+  useCanEdit,
+} from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice } from "../../components/ui";
 import { WalletPicker } from "../../components/planning-ui";
@@ -66,6 +70,8 @@ export default function TransactionDialog({
   const [amountError, setAmountError] = useState("");
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [refund, setRefund] = useState(transaction?.refund ?? false);
+  const canEdit = useCanEdit();
   const saving = useRef(false);
   const identity = useRef(transaction?.id ?? crypto.randomUUID());
   const createdAt = useRef(transaction?.createdAt ?? new Date().toISOString());
@@ -103,6 +109,10 @@ export default function TransactionDialog({
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!canEdit) {
+      setError("Ruang ini hanya dapat dibaca.");
+      return;
+    }
     if (saving.current) return;
     setError("");
     setAmountError("");
@@ -134,6 +144,7 @@ export default function TransactionDialog({
           amount: parsed,
           categoryId,
           walletId,
+          ...(kind === "expense" && refund ? { refund: true } : {}),
           ...(transaction?.occurrenceKey
             ? { occurrenceKey: transaction.occurrenceKey }
             : {}),
@@ -145,9 +156,7 @@ export default function TransactionDialog({
         Boolean(transaction),
       );
       notify(
-        transaction
-          ? "Perubahan transaksi tersimpan."
-          : "Transaksi tersimpan di perangkat ini.",
+        transaction ? "Perubahan transaksi tersimpan." : "Transaksi tersimpan.",
       );
       onClose();
     } catch (err) {
@@ -158,6 +167,10 @@ export default function TransactionDialog({
     }
   }
   async function remove() {
+    if (!canEdit) {
+      setError("Ruang ini hanya dapat dibaca.");
+      return;
+    }
     if (!transaction || saving.current) return;
     saving.current = true;
     setBusy(true);
@@ -188,7 +201,7 @@ export default function TransactionDialog({
       description={
         deleting
           ? "Catatan akan dihapus dan saldo langsung diperbarui. Tindakan ini tidak dapat dibatalkan."
-          : "Catatanmu tersimpan hanya di browser pada perangkat ini."
+          : "Catatan disimpan di ruang yang sedang kamu buka."
       }
       initialFocus={deleting ? undefined : amountInput}
     >
@@ -395,6 +408,17 @@ export default function TransactionDialog({
             />
             <p className="field-hint align-right">{note.length}/500</p>
           </div>
+          {kind === "expense" && (
+            <label className="check-line">
+              <input
+                type="checkbox"
+                checked={refund}
+                disabled={busy || !canEdit}
+                onChange={(e) => setRefund(e.target.checked)}
+              />
+              Pengembalian dana (refund) · mengurangi pengeluaran kategori
+            </label>
+          )}
           {error && <ErrorNotice>{error}</ErrorNotice>}
           <div className="modal-footer">
             {transaction && (
@@ -419,7 +443,7 @@ export default function TransactionDialog({
             <button
               className="button primary"
               type="submit"
-              disabled={busy || !categoryId}
+              disabled={busy || !categoryId || !canEdit}
             >
               {busy
                 ? "Menyimpan…"

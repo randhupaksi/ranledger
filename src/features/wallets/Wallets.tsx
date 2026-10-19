@@ -16,19 +16,27 @@ import {
 } from "../../domain/ledger";
 import type { Transfer, Wallet, WalletType } from "../../domain/ledger";
 import { ledgerTotals, walletBalances } from "../../domain/planning";
+import { isLiability } from "../../domain/finance";
 
-function WalletEditor({
+export function WalletEditor({
   wallet,
   onClose,
+  defaultType = "bank",
 }: {
   wallet?: Wallet;
   onClose: () => void;
+  defaultType?: WalletType;
 }) {
   const [id] = useState(() => wallet?.id ?? crypto.randomUUID());
   const [name, setName] = useState(wallet?.name ?? "");
-  const [type, setType] = useState<WalletType>(wallet?.type ?? "bank");
+  const [type, setType] = useState<WalletType>(wallet?.type ?? defaultType);
   const [amount, setAmount] = useState(
-    wallet?.openingBalance.toLocaleString("id-ID") ?? "0",
+    wallet
+      ? (isLiability(wallet)
+          ? -wallet.openingBalance
+          : wallet.openingBalance
+        ).toLocaleString("id-ID")
+      : "0",
   );
   const [archived, setArchived] = useState(wallet?.archived ?? false);
   return (
@@ -44,7 +52,9 @@ function WalletEditor({
             id,
             name: name.trim(),
             type,
-            openingBalance: parseAmount(amount, true),
+            openingBalance: isLiability({ type })
+              ? -Math.abs(parseAmount(amount, true))
+              : parseAmount(amount, true),
             archived,
             updatedAt: wallet?.updatedAt ?? new Date().toISOString(),
           },
@@ -76,14 +86,17 @@ function WalletEditor({
         />
       </div>
       <AmountField
-        label="Saldo awal dompet (Rp)"
+        label={
+          isLiability({ type }) ? "Utang awal (Rp)" : "Saldo awal dompet (Rp)"
+        }
         value={amount}
         onChange={setAmount}
         negative
       />
       <p className="field-hint">
-        Bisa negatif. Mengubah saldo awal memperbarui saldo dompet tanpa membuat
-        pemasukan baru.
+        {isLiability({ type })
+          ? "Masukkan sisa utang sebagai angka positif. Pembelian dicatat sebagai pengeluaran dari akun ini; pembayaran memakai transfer dari akun aset."
+          : "Bisa negatif. Mengubah saldo awal memperbarui saldo dompet tanpa membuat pemasukan baru."}
       </p>
       {wallet && (
         <label className="check-line">
