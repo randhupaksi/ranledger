@@ -13,15 +13,19 @@
   --paper: #f7f8f5;
   --surface: #fff;
   --surface-alt: #f3f5f1;
+  --surface-raised: #fbfcf9;
   --ink: #243c30;
   --muted: #6e786f;
   --line: #e5e9e1;
   --brand: #234c3c;
   --brand-hover: #173b2c;
+  --primary-hover: #3f7a4d;
   --on-brand: #fff;
   --brand-soft: #edf3eb;
   --income: #316b4e;
-  --expense: #965345;
+  --income-soft: #e8f2ea;
+  --expense: #a14537;
+  --expense-soft: #f8e8e3;
   --danger: #a33e33;
   --danger-soft: #fff1ed;
   --warning: #786125;
@@ -32,6 +36,7 @@
   --sidebar-muted: #b2c1b4;
   --lime: #d5e5a1;
   --radius: 12px;
+  --focus-ring: #2f6e50;
   background: var(--paper);
   color: var(--ink);
 }
@@ -40,15 +45,19 @@
   --paper: #141c18;
   --surface: #1c2720;
   --surface-alt: #222f27;
+  --surface-raised: #202d25;
   --ink: #e5ece4;
   --muted: #abb6aa;
   --line: #334237;
   --brand: #b9d5b0;
-  --brand-hover: #c8e4bf;
+  --brand-hover: #d7edc7;
+  --primary-hover: #dcef79;
   --on-brand: #183323;
   --brand-soft: #2c3e2e;
   --income: #a0cfab;
-  --expense: #e0aa94;
+  --income-soft: #233b2c;
+  --expense: #f08c78;
+  --expense-soft: #402824;
   --danger: #f2b0a4;
   --danger-soft: #412b27;
   --warning: #dcc989;
@@ -57,6 +66,7 @@
   --scrollbar-thumb-hover: #a5c78d;
   --sidebar: #10251c;
   --sidebar-muted: #a7b9ab;
+  --focus-ring: #c8e4bf;
 }
 * {
   box-sizing: border-box;
@@ -154,7 +164,8 @@ svg {
   flex-shrink: 0;
 }
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 ::selection {
   background: #d5e5a1;
@@ -199,6 +210,15 @@ svg {
 }
 .expense {
   color: var(--expense);
+}
+.positive {
+  color: var(--income);
+}
+.negative {
+  color: var(--expense);
+}
+.neutral {
+  color: var(--ink);
 }
 .align-right {
   text-align: right;
@@ -249,6 +269,7 @@ svg {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 22px;
 }
 .nav-item {
   display: flex;
@@ -304,42 +325,16 @@ kbd {
   margin-top: auto;
   padding-top: 35px;
 }
-.sidebar-privacy {
-  margin: 0 8px 30px;
-}
-.sidebar-privacy > svg {
-  color: #bccf93;
-  margin-bottom: 13px;
-}
-.sidebar-privacy strong {
-  display: block;
-  font-size: 12px;
-}
-.sidebar-privacy p {
-  margin-top: 7px;
-  font-size: 11px;
-  color: var(--sidebar-muted);
-  line-height: 1.8;
-}
-.sidebar-privacy a {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 15px;
-  color: #d4e2b7;
-  font-size: 11px;
-}
 .sidebar-footer {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   border-top: 1px solid #ffffff15;
   padding: 18px 7px;
   font-size: 9px;
   color: var(--sidebar-muted);
+  text-align: center;
 }
-.sidebar-footer > span:last-child {
-  margin-left: auto;
+.sidebar-copyright {
+  display: block;
+  line-height: 1.5;
 }
 .local-dot,
 .connection-state > span,
@@ -394,6 +389,9 @@ kbd {
   color: var(--warning);
 }
 .topbar-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   color: var(--muted);
   border-left: 1px solid var(--line);
   padding-left: 22px;
@@ -441,6 +439,11 @@ kbd {
   line-height: 1.7;
 }
 .heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
   flex-shrink: 0;
 }
 .button {
@@ -464,7 +467,7 @@ kbd {
   color: var(--on-brand);
 }
 .button.primary:hover:not(:disabled) {
-  background: var(--brand-hover);
+  background: var(--primary-hover);
 }
 .button.secondary {
   background: var(--surface);
@@ -674,6 +677,11 @@ kbd {
   gap: 10px;
   flex-wrap: wrap;
 }
+.report-filters > .field,
+.filter-controls > .field {
+  width: 190px;
+  flex: 0 0 190px;
+}
 input,
 select,
 textarea {
@@ -706,9 +714,10 @@ select {
   color: var(--ink);
   border-radius: 7px;
   min-height: 42px;
+  width: 190px;
   min-width: 0;
   max-width: 100%;
-  padding: 10px 37px 10px 12px;
+  padding: 10px 40px 10px 12px;
   font-size: 12px;
   line-height: 1.2;
   text-align: left;
@@ -790,9 +799,10 @@ select {
   color: var(--muted);
 }
 .period-picker > .radix-select-trigger {
-  min-height: 37px;
-  padding: 8px 54px 8px 12px;
-  font-size: 11px;
+  width: 190px;
+  min-height: 42px;
+  padding: 10px 40px 10px 12px;
+  font-size: 12px;
 }
 .date-range {
   display: flex;
@@ -958,7 +968,7 @@ select {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.row-chevron {
+.row-arrow {
   color: var(--muted);
   opacity: 0.55;
 }
@@ -1105,6 +1115,9 @@ select {
   min-height: 38px;
   font-size: 11px;
 }
+.empty-state .button + .button {
+  margin-top: 10px;
+}
 .backup-reminder {
   display: flex;
   align-items: center;
@@ -1157,6 +1170,12 @@ select {
   padding: 0 11px;
   width: 340px;
   max-width: 100%;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    transform 0.12s ease;
 }
 .search-field input {
   border: 0;
@@ -1166,8 +1185,10 @@ select {
   padding-right: 0;
 }
 .search-field:focus-within {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+  border-color: var(--brand);
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 17%, transparent);
+  color: var(--brand);
 }
 .search-field input:focus-visible {
   outline: none;
@@ -1185,10 +1206,11 @@ select {
   flex-wrap: wrap;
 }
 .filter-controls .radix-select-trigger {
-  min-height: 37px;
-  font-size: 11px;
-  padding: 8px 51px 8px 10px;
-  max-width: 200px;
+  width: 190px;
+  min-height: 42px;
+  font-size: 12px;
+  padding: 10px 40px 10px 12px;
+  max-width: 100%;
 }
 .filter-symbol {
   color: var(--muted);
@@ -1484,7 +1506,7 @@ select {
   width: 100%;
 }
 .field textarea {
-  resize: vertical;
+  resize: none;
   min-height: 80px;
 }
 .field-hint {
@@ -1997,9 +2019,9 @@ select {
   font-size: 12px;
 }
 .setting-row > .radix-select-trigger {
-  min-height: 35px;
-  padding: 7px 50px 7px 10px;
-  font-size: 11px;
+  min-height: 42px;
+  padding: 10px 40px 10px 12px;
+  font-size: 12px;
 }
 .switch {
   appearance: none;
@@ -2301,7 +2323,7 @@ select {
     grid-column: 2;
     grid-row: 1 / 3;
   }
-  .row-chevron {
+  .row-arrow {
     grid-column: 3;
     grid-row: 1 / 3;
   }
@@ -2510,10 +2532,11 @@ select {
     justify-content: flex-end;
   }
   .period-picker > .radix-select-trigger {
-    min-height: 36px;
-    max-width: 150px;
-    font-size: 10px;
-    padding-left: 10px;
+    width: 145px;
+    min-height: 42px;
+    max-width: 145px;
+    font-size: 12px;
+    padding: 10px 40px 10px 12px;
   }
   .period-heading:has(.date-range),
   .report-period:has(.date-range) {
@@ -2658,10 +2681,11 @@ select {
     min-width: 0;
   }
   .filter-controls .radix-select-trigger {
-    min-height: 36px;
-    font-size: 10px;
-    max-width: 150px;
-    padding-left: 9px;
+    width: 145px;
+    min-height: 42px;
+    font-size: 12px;
+    max-width: 145px;
+    padding: 10px 40px 10px 12px;
   }
   .filter-symbol {
     display: none;
@@ -2718,10 +2742,10 @@ select {
     grid-row: 1 / 3;
     font-size: 12px;
   }
-  .row-chevron {
+  .row-arrow {
     grid-column: 3;
     grid-row: 1 / 3;
-    width: 12px;
+    width: 14px;
   }
   .compact .transaction-date {
     display: none;
@@ -2729,7 +2753,7 @@ select {
   .compact .transaction-amount {
     grid-row: 1;
   }
-  .compact .row-chevron {
+  .compact .row-arrow {
     grid-row: 1;
   }
   .pagination {
@@ -3166,5 +3190,553 @@ select {
 @media (max-width: 1000px) {
   .mobile-category {
     display: inline;
+  }
+}
+
+/* Visual hierarchy refinement: a calm ledger surface with explicit financial meaning. */
+.topbar {
+  background: color-mix(in srgb, var(--surface) 92%, var(--paper));
+}
+.page-heading {
+  position: relative;
+  padding-bottom: 22px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--line);
+}
+.page-heading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 2px;
+  background: var(--brand);
+}
+.eyebrow {
+  color: color-mix(in srgb, var(--brand) 78%, var(--muted));
+}
+.page-description {
+  max-width: 560px;
+}
+.button,
+.nav-item,
+.transaction-row,
+.register-row,
+.summary-item,
+.brief-budget,
+.brief-schedule,
+.goal-brief-row,
+.category-bar-row {
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+.button.primary {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--on-brand) 22%, transparent) inset;
+}
+.button.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.button.secondary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+}
+.sidebar {
+  border-right: 1px solid #ffffff0c;
+}
+.nav-item {
+  position: relative;
+}
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  width: 3px;
+  height: 20px;
+  border-radius: 4px;
+  background: #b8cc80;
+}
+.sidebar-add:hover:not(:disabled) {
+  color: #fff;
+  background: #ffffff08;
+}
+.connection-state {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+}
+.connection-state.offline {
+  background: var(--warning-soft);
+}
+.balance-panel {
+  border: 1px solid color-mix(in srgb, #b8cc80 18%, transparent);
+  box-shadow: 0 12px 32px #0c211b0d;
+}
+.balance-primary {
+  background: #112c20;
+}
+.balance-detail {
+  background: #0e251b;
+}
+.balance-detail > div {
+  position: relative;
+  padding-left: 10px;
+}
+.balance-detail > div::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: #ffffff28;
+}
+.balance-detail .balance-income::before {
+  background: var(--income);
+}
+.balance-detail .balance-expense::before {
+  background: var(--expense);
+}
+.balance-detail .balance-income strong {
+  color: var(--income);
+}
+.balance-detail .balance-expense strong {
+  color: var(--expense);
+}
+.wallet-inline {
+  position: relative;
+  padding-top: 25px;
+}
+.wallet-inline::before {
+  content: "DOMPET AKTIF";
+  position: absolute;
+  top: 5px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 1.4px;
+}
+.wallet-inline > a:not(.text-link) {
+  min-width: 88px;
+  padding-left: 9px;
+  border-left: 2px solid var(--line);
+}
+.wallet-inline > a:not(.text-link):hover {
+  border-left-color: var(--brand);
+}
+.wallet-inline > a > strong {
+  font-size: 13px;
+  letter-spacing: -0.15px;
+}
+.surface {
+  background: var(--surface-raised);
+  border-color: color-mix(in srgb, var(--line) 88%, var(--ink));
+}
+.surface > .section-heading {
+  border-bottom: 1px solid var(--line);
+}
+.section-heading h2 {
+  letter-spacing: -0.35px;
+}
+.planning-overview-column .section-heading {
+  border-bottom: 0;
+}
+.brief-empty {
+  border-left: 2px solid var(--brand);
+  padding-left: 13px;
+}
+.brief-budget,
+.brief-schedule {
+  position: relative;
+}
+.brief-budget:hover,
+.brief-schedule:hover,
+.goal-brief-row:hover {
+  background: var(--surface-alt);
+}
+.brief-schedule > .income {
+  color: var(--income);
+}
+.brief-schedule > .expense {
+  color: var(--expense);
+}
+.period-heading {
+  align-items: end;
+}
+.period-summary {
+  position: relative;
+  padding-top: 9px;
+}
+.summary-item {
+  position: relative;
+  isolation: isolate;
+}
+.summary-item::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: -9px;
+  height: 2px;
+  background: transparent;
+}
+.summary-item:first-child::before {
+  left: 0;
+}
+.summary-item:hover {
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+}
+.summary-item:hover > strong {
+  transform: translateX(2px);
+}
+.summary-item > strong {
+  transition: transform 0.16s ease;
+}
+.income-summary::before {
+  background: var(--income);
+}
+.expense-summary::before {
+  background: var(--expense);
+}
+.net-summary.positive::before {
+  background: var(--income);
+}
+.net-summary.negative::before {
+  background: var(--expense);
+}
+.net-summary.neutral::before {
+  background: var(--muted);
+}
+.income-summary .summary-label {
+  color: var(--income);
+}
+.expense-summary .summary-label {
+  color: var(--expense);
+}
+.net-summary.positive .summary-label {
+  color: var(--income);
+}
+.net-summary.negative .summary-label {
+  color: var(--expense);
+}
+.kind-icon.income {
+  color: var(--income);
+  background: var(--income-soft);
+}
+.kind-icon.expense {
+  color: var(--expense);
+  background: var(--expense-soft);
+}
+.transaction-row:hover .row-arrow {
+  color: var(--brand);
+  opacity: 1;
+}
+.filtered-summary b.expense {
+  color: var(--expense);
+}
+.filtered-summary b.positive {
+  color: var(--income);
+}
+.filtered-summary b.negative {
+  color: var(--expense);
+}
+.legend-income,
+.income-bar {
+  background: var(--income);
+}
+.legend-expense,
+.expense-bar {
+  background: var(--expense);
+}
+:root[data-theme="dark"] .legend-income,
+:root[data-theme="dark"] .income-bar {
+  background: var(--income);
+}
+:root[data-theme="dark"] .legend-expense,
+:root[data-theme="dark"] .expense-bar {
+  background: var(--expense);
+}
+.chart-bar {
+  opacity: 0.9;
+  transition:
+    opacity 0.16s ease,
+    filter 0.16s ease;
+}
+.chart-group:hover .chart-bar {
+  opacity: 1;
+  filter: saturate(1.1);
+}
+.report-notes {
+  border-left: 2px solid var(--line);
+}
+.report-notes h2 {
+  color: var(--brand);
+}
+.comparison-note {
+  border-left: 2px solid var(--expense);
+  padding-left: 14px;
+}
+.kind-switch button.selected:first-child {
+  color: var(--expense);
+  box-shadow: inset 0 -2px 0 var(--expense);
+}
+.kind-switch button.selected:last-child {
+  color: var(--income);
+  box-shadow: inset 0 -2px 0 var(--income);
+}
+.empty-state {
+  position: relative;
+}
+.empty-state::before {
+  content: "";
+  width: 28px;
+  height: 2px;
+  margin-bottom: 16px;
+  background: var(--brand);
+}
+.backup-reminder {
+  border-left: 3px solid var(--brand);
+}
+@media (max-width: 760px) {
+  .report-filters > .field,
+  .filter-controls > .field {
+    width: 145px;
+    flex: 0 0 145px;
+  }
+  .page-heading {
+    padding-bottom: 18px;
+    margin-bottom: 25px;
+  }
+  .connection-state {
+    padding: 4px 6px;
+  }
+  .wallet-inline {
+    padding-top: 24px;
+  }
+  .wallet-inline > a:not(.text-link) {
+    min-width: 78px;
+  }
+  .surface > .section-heading {
+    border-bottom: 1px solid var(--line);
+  }
+  .planning-overview-column .section-heading {
+    border-bottom: 0;
+  }
+  .summary-item::before {
+    left: 17px;
+    right: 0;
+    top: -1px;
+  }
+  .summary-item:first-child::before {
+    left: 0;
+  }
+  .summary-item:nth-child(3)::before {
+    left: 0;
+    right: 0;
+    top: -1px;
+  }
+  .summary-item:hover {
+    background: transparent;
+  }
+  .transaction-row:hover {
+    box-shadow: none;
+  }
+  .report-notes {
+    border-left: 0;
+    border-top: 2px solid var(--line);
+    padding-top: 22px;
+  }
+}
+
+/* Press feedback is reserved for controls and navigable records. */
+.button:not(:disabled):active,
+.icon-button:not(:disabled):active,
+.sidebar-add:not(:disabled):active,
+.radix-select-trigger:not([data-disabled]):active,
+.kind-switch button:not(:disabled):active,
+.mobile-nav button:not(:disabled):active {
+  transform: translateY(1px) scale(0.985);
+}
+.button.primary:not(:disabled):active {
+  background: var(--brand-hover);
+  box-shadow: none;
+}
+.button.secondary:not(:disabled):active,
+.icon-button:not(:disabled):active {
+  background: var(--surface-alt);
+  border-color: color-mix(in srgb, var(--brand) 38%, var(--line));
+}
+.button.danger:not(:disabled):active {
+  background: #842f26;
+  box-shadow: inset 0 1px 0 #0000001c;
+}
+.text-link:active,
+.balance-detail a:active,
+.wallet-inline > a:active,
+.more-menu a:active {
+  transform: translateY(1px);
+  opacity: 0.72;
+}
+.nav-item:active,
+.mobile-nav a:active {
+  transform: scale(0.985);
+  background-color: #ffffff14;
+}
+.mobile-nav a.active:active,
+.mobile-nav button.active:active {
+  background-color: color-mix(in srgb, var(--brand-soft) 74%, var(--brand));
+}
+.summary-item:active,
+.brief-budget:active,
+.brief-schedule:active,
+.goal-brief-row:active,
+.category-bar-row:active {
+  transform: translateY(1px);
+  background: var(--surface-alt);
+}
+.transaction-row:not(:disabled):active,
+.register-row:not(:disabled):active,
+.schedule-line:active,
+.budget-line:active,
+.goal-line:active {
+  background: var(--surface-alt);
+}
+.register-row:not(:disabled):active,
+.transaction-row:not(:disabled):active {
+  transform: translateY(1px);
+}
+.filter-controls .text-link:active,
+.pagination .button:not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
+}
+.search-field:hover {
+  border-color: color-mix(in srgb, var(--brand) 48%, var(--line));
+  background: var(--surface-raised);
+}
+.search-field:focus-within {
+  border-color: var(--brand);
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 17%, transparent);
+}
+.search-field:active {
+  transform: scale(0.997);
+}
+.radix-select-trigger,
+select {
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    transform 0.12s ease;
+}
+.radix-select-trigger:not([data-disabled]):hover,
+select:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--brand) 48%, var(--line));
+  background-color: var(--surface-raised);
+}
+.radix-select-trigger[data-state="open"],
+.radix-select-trigger:focus-visible,
+select:focus-visible {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+}
+.radix-select-trigger:not([data-disabled]):active,
+select:not(:disabled):active {
+  background-color: var(--brand-soft);
+  transform: translateY(1px) scale(0.99);
+}
+.radix-select-item {
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+.field:not(.amount-field)
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.field:not(.amount-field) textarea,
+.date-range input {
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.field:not(.amount-field)
+  input:not(:disabled):not([type="checkbox"]):not([type="radio"]):not(
+    [type="file"]
+  ):not([aria-invalid="true"]):hover,
+.field:not(.amount-field) textarea:not(:disabled):hover,
+.date-range input:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--brand) 48%, var(--line));
+  background-color: var(--surface-raised);
+}
+.field:not(.amount-field)
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(
+    [aria-invalid="true"]
+  ):focus,
+.field:not(.amount-field) textarea:focus,
+.date-range input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+}
+.amount-input {
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease;
+}
+.amount-input:hover:not(.invalid) {
+  border-color: color-mix(in srgb, var(--brand) 48%, var(--line));
+  background-color: color-mix(in srgb, var(--brand-soft) 24%, transparent);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  transition: outline-color 0.16s ease;
+}
+input[type="checkbox"]:hover,
+input[type="radio"]:hover {
+  outline: 2px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-field,
+  .radix-select-trigger,
+  select,
+  .radix-select-item,
+  .field input,
+  .field textarea,
+  .date-range input,
+  .amount-input,
+  input[type="checkbox"],
+  input[type="radio"] {
+    transition: none;
+  }
+  .button:not(:disabled):active,
+  .icon-button:not(:disabled):active,
+  .sidebar-add:not(:disabled):active,
+  .radix-select-trigger:not([data-disabled]):active,
+  .kind-switch button:not(:disabled):active,
+  .mobile-nav button:not(:disabled):active,
+  .text-link:active,
+  .balance-detail a:active,
+  .wallet-inline > a:active,
+  .more-menu a:active,
+  .nav-item:active,
+  .mobile-nav a:active,
+  .summary-item:active,
+  .brief-budget:active,
+  .brief-schedule:active,
+  .goal-brief-row:active,
+  .category-bar-row:active,
+  .transaction-row:not(:disabled):active,
+  .register-row:not(:disabled):active,
+  .schedule-line:active,
+  .budget-line:active,
+  .goal-line:active {
+    transform: none;
+  }
+  .search-field:active,
+  .radix-select-trigger:not([data-disabled]):active,
+  select:not(:disabled):active {
+    transform: none;
   }
 }

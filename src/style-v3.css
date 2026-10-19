@@ -122,47 +122,25 @@
     font-size: 12px;
   }
 }
-.workspace-selector {
-  display: block;
-  margin: 20px 12px 12px;
-  padding: 13px 14px;
-  border: 1px solid #ffffff20;
-  border-radius: 8px;
-  color: inherit;
-  text-decoration: none;
+
+.account-tabs button {
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
 }
-.workspace-selector .eyebrow {
-  font-size: 9px;
-  color: var(--sidebar-muted);
-  letter-spacing: 0.12em;
+.account-tabs button:not(.active):hover {
+  color: var(--ink);
+  border-color: var(--brand);
 }
-.workspace-selector strong {
-  display: block;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin: 5px 0;
-}
-.workspace-selector small {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--sidebar-muted);
-  font-size: 11px;
+.account-tabs button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 3px;
 }
 .desktop-nav .nav-item {
   min-height: 36px;
   padding-block: 7px;
-}
-.sidebar-privacy {
-  padding-block: 12px;
-}
-.sidebar-privacy p {
-  font-size: 11px;
-}
-.sidebar-privacy > svg {
-  display: none;
 }
 .v3-statement {
   padding: 24px 0;

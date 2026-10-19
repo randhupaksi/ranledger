@@ -7,15 +7,13 @@ import {
   type ReactNode,
 } from "react";
 import {
-  ArrowRight,
   BarChart3,
-  ChevronRight,
+  ArrowRight,
   CloudOff,
   DatabaseBackup,
   House,
   Plus,
   Settings2,
-  ShieldCheck,
   WalletCards,
   X,
   Wallet,
@@ -188,6 +186,7 @@ function Shell() {
   const [dialog, setDialog] = useState<Transaction | "new" | null>(null);
   const [more, setMore] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
+  const [now, setNow] = useState(() => new Date());
   const location = useLocation();
   const active = navigation.find(
     (n) =>
@@ -202,6 +201,17 @@ function Shell() {
     return () => {
       window.removeEventListener("online", connected);
       window.removeEventListener("offline", disconnected);
+    };
+  }, []);
+  useEffect(() => {
+    const updateTime = () => setNow(new Date());
+    const interval = window.setInterval(updateTime, 30_000);
+    window.addEventListener("focus", updateTime);
+    document.addEventListener("visibilitychange", updateTime);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", updateTime);
+      document.removeEventListener("visibilitychange", updateTime);
     };
   }, []);
   useEffect(() => {
@@ -239,16 +249,6 @@ function Shell() {
         <Link to="/" className="brand-link" aria-label="Ranledger beranda">
           <Logo />
         </Link>
-        <Link className="workspace-selector" to="/ruang">
-          <span className="eyebrow">
-            {cloud.active ? "RUANG TERSINKRON" : "PERANGKAT INI"}
-          </span>
-          <strong>{cloud.active?.name ?? "Keuangan pribadi"}</strong>
-          <small>
-            {cloud.active ? cloud.status : "Lokal · milikmu"}
-            <ChevronRight size={14} />
-          </small>
-        </Link>
         <nav aria-label="Navigasi utama" className="desktop-nav">
           {navigation.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -274,24 +274,10 @@ function Shell() {
           Catat transaksi<kbd>N</kbd>
         </button>
         <div className="sidebar-bottom">
-          <div className="sidebar-privacy">
-            <ShieldCheck size={22} />
-            <strong>Catatanmu, milikmu.</strong>
-            <p>
-              {cloud.active
-                ? "Ruang yang kamu pilih."
-                : "Tersimpan di perangkat ini."}
-              <br />
-              {cloud.active ? cloud.status : "Tanpa akun, tanpa cloud."}
-            </p>
-            <Link to="/backup">
-              Jaga dengan backup <ArrowRight size={14} />
-            </Link>
-          </div>
           <div className="sidebar-footer">
-            <span className="local-dot" />
-            {cloud.active ? "Lokal + cloud" : "Penyimpanan lokal"}
-            <span>v3.0</span>
+            <span className="sidebar-copyright">
+              © 2026 Ranledger · All rights reserved.
+            </span>
           </div>
         </div>
       </aside>
@@ -299,7 +285,7 @@ function Shell() {
         <header className="topbar">
           <div className="breadcrumb">
             <span>Keuangan pribadi</span>
-            <ChevronRight size={14} />
+            <ArrowRight size={14} aria-hidden="true" />
             <strong>{active?.label ?? "404"}</strong>
           </div>
           <Link to="/" className="mobile-brand" aria-label="Ranledger beranda">
@@ -319,13 +305,22 @@ function Shell() {
                 </>
               )}
             </span>
-            <span className="topbar-date">
-              {new Date().toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
+            <time className="topbar-date" dateTime={now.toISOString()}>
+              <CalendarDays size={15} aria-hidden="true" />
+              <span>
+                {now.toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hourCycle: "h23",
+                })}
+                {", "}
+                {now.toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            </time>
           </div>
         </header>
         {!online && (
@@ -454,7 +449,7 @@ function Shell() {
                   <Link key={to} to={to} onClick={() => setMore(false)}>
                     <Icon size={19} />
                     <span>{label}</span>
-                    <ChevronRight size={16} />
+                    <ArrowRight size={14} aria-hidden="true" />
                   </Link>
                 ))}
             </nav>

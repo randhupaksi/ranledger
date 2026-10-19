@@ -18,16 +18,6 @@
 .sidebar-bottom {
   padding-top: 22px;
 }
-.sidebar-privacy {
-  margin-bottom: 18px;
-}
-.sidebar-privacy > svg,
-.sidebar-privacy p {
-  display: none;
-}
-.sidebar-privacy a {
-  margin-top: 8px;
-}
 .heading-actions {
   gap: 10px;
   flex-wrap: wrap;
@@ -379,7 +369,7 @@
   font-size: 14px;
 }
 .brief-empty {
-  padding: 8px 0 12px;
+  padding: 8px 0 12px 13px;
   font-size: 12px;
 }
 .brief-empty > span {
