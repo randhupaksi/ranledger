@@ -45,6 +45,7 @@ export function AmountField({
         id={id}
         ref={ref}
         value={value}
+        placeholder="Misalnya, 250.000"
         inputMode={negative ? "text" : "numeric"}
         maxLength={24}
         autoComplete="off"

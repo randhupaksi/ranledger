@@ -155,6 +155,11 @@ export function EncryptedBackup({
                 type="password"
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
+                placeholder={
+                  file
+                    ? "Masukkan frasa sandi untuk membuka backup"
+                    : "Buat frasa sandi, minimal 12 karakter"
+                }
                 minLength={12}
                 required
                 autoComplete={file ? "off" : "new-password"}
@@ -170,6 +175,7 @@ export function EncryptedBackup({
                   type="password"
                   value={repeat}
                   onChange={(e) => setRepeat(e.target.value)}
+                  placeholder="Ulangi frasa sandi backup"
                   minLength={12}
                   required
                   autoComplete="new-password"

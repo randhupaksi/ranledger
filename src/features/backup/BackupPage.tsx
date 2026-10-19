@@ -470,7 +470,7 @@ export default function BackupPage() {
                   setConfirm(true);
                 }}
               >
-                Lanjutkan pemulihan <ArrowRight size={16} />
+                Lanjutkan pemulihan <ArrowRight size={14} aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -537,6 +537,7 @@ export default function BackupPage() {
               id="confirm-replace"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="GANTI"
               autoComplete="off"
             />
           </div>

@@ -84,6 +84,7 @@ function TermsEditor({
             type="number"
             min="1"
             max="31"
+            placeholder="1–31"
             value={statement}
             onChange={(e) => setStatement(Number(e.target.value))}
           />
@@ -95,6 +96,7 @@ function TermsEditor({
             type="number"
             min="1"
             max="31"
+            placeholder="1–31"
             value={due}
             onChange={(e) => setDue(Number(e.target.value))}
           />
@@ -116,6 +118,7 @@ function TermsEditor({
           type="number"
           min="0"
           max="600"
+          placeholder="0 = berulang"
           value={count}
           onChange={(e) => setCount(Number(e.target.value))}
         />

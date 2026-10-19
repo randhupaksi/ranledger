@@ -1,6 +1,6 @@
 import { EditorDialog } from "../../components/EditorDialog";
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { useLedger } from "../../components/LedgerProvider";
 import { PageHeading, Pagination } from "../../components/ui";
@@ -188,6 +188,7 @@ function TransferEditor({
           id="transfer-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          placeholder="Misalnya, pindah dana ke rekening utama"
           maxLength={500}
         />
       </div>
@@ -281,7 +282,7 @@ export default function Wallets() {
               <strong className="numeric">
                 {money(balances.get(w.id) ?? 0, hidden)}
               </strong>
-              <ChevronRight size={16} />
+              <ArrowRight size={14} aria-hidden="true" />
             </button>
           ))
         ) : (
@@ -302,7 +303,7 @@ export default function Wallets() {
             disabled={ledger.wallets.filter((w) => !w.archived).length < 2}
             onClick={() => setTransferEditor("new")}
           >
-            <ArrowLeftRight size={16} />
+            <ArrowLeftRight size={14} />
             Transfer
           </button>
         </div>
@@ -316,7 +317,8 @@ export default function Wallets() {
             >
               <div>
                 <strong>
-                  {names.get(t.sourceWalletId)} <span className="muted">→</span>{" "}
+                  {names.get(t.sourceWalletId)}{" "}
+                  <ArrowRight size={14} className="muted" aria-hidden="true" />{" "}
                   {names.get(t.targetWalletId)}
                 </strong>
                 <small>{t.note || "Transfer"}</small>
@@ -325,7 +327,7 @@ export default function Wallets() {
                 {dateLabel(t.date, ledger.preferences.dateFormat)}
               </span>
               <strong className="numeric">{money(t.amount, hidden)}</strong>
-              <ChevronRight size={16} />
+              <ArrowRight size={14} aria-hidden="true" />
             </button>
           ))
         ) : (

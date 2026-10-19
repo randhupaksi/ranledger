@@ -245,7 +245,7 @@ export default function TransactionDialog({
               aria-pressed={kind === "expense"}
               onClick={() => changeKind("expense")}
             >
-              <ArrowUpRight size={18} />
+              <ArrowUpRight size={14} />
               Pengeluaran
             </button>
             <button
@@ -254,7 +254,7 @@ export default function TransactionDialog({
               aria-pressed={kind === "income"}
               onClick={() => changeKind("income")}
             >
-              <ArrowDownLeft size={18} />
+              <ArrowDownLeft size={14} />
               Pemasukan
             </button>
           </fieldset>
@@ -334,7 +334,7 @@ export default function TransactionDialog({
                     /* Invalid text remains available for correction. */
                   }
                 }}
-                placeholder="0"
+                placeholder="Misalnya, 250.000"
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={24}

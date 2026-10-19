@@ -146,7 +146,11 @@ export default function CloudPage() {
       </section>
       {!cloud.user ? (
         <section className="v3-section narrow-section">
-          <div className="tabs" role="group" aria-label="Akses akun">
+          <div
+            className="tabs account-tabs"
+            role="group"
+            aria-label="Akses akun"
+          >
             {[
               ["login", "Masuk"],
               ["register", "Buat akun"],
@@ -172,6 +176,7 @@ export default function CloudPage() {
                   id="cloud-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="Nama yang tampil di ruang"
                   maxLength={60}
                   required
                   autoComplete="name"
@@ -185,6 +190,7 @@ export default function CloudPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@contoh.com"
                 maxLength={254}
                 required
                 autoComplete="email"
@@ -197,6 +203,7 @@ export default function CloudPage() {
                   id="recovery-code"
                   value={recovery}
                   onChange={(e) => setRecovery(e.target.value)}
+                  placeholder="Tempel recovery code yang kamu simpan"
                   required
                   autoComplete="off"
                 />
@@ -215,6 +222,13 @@ export default function CloudPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder={
+                  mode === "recover"
+                    ? "Buat kata sandi baru, minimal 12 karakter"
+                    : mode === "register"
+                      ? "Buat kata sandi, minimal 12 karakter"
+                      : "Masukkan kata sandi akun"
+                }
                 minLength={12}
                 maxLength={128}
                 required
@@ -346,6 +360,7 @@ export default function CloudPage() {
                   id="join-code"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
+                  placeholder="Tempel kode undangan ruang"
                   required
                   autoComplete="off"
                 />
@@ -639,6 +654,7 @@ export default function CloudPage() {
                 id="reload-confirm"
                 value={reloadText}
                 onChange={(e) => setReloadText(e.target.value)}
+                placeholder="MUAT"
               />
             </div>
             {error && <ErrorNotice>{error}</ErrorNotice>}
@@ -727,6 +743,7 @@ export default function CloudPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Masukkan kata sandi akun"
                 required
                 autoComplete="current-password"
               />
@@ -737,6 +754,7 @@ export default function CloudPage() {
                 id="delete-confirm"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
+                placeholder="HAPUS AKUN"
               />
             </div>
             {error && <ErrorNotice>{error}</ErrorNotice>}

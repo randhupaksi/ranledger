@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Archive,
   ArchiveRestore,
+  ArrowRight,
   Check,
   HardDrive,
   Monitor,
@@ -335,7 +336,7 @@ export default function Settings() {
             <p>
               Saldo awal sekarang dikelola per dompet.{" "}
               <Link to="/dompet" className="text-link">
-                Kelola semua dompet →
+                Kelola semua dompet <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </p>
           </div>
@@ -352,6 +353,7 @@ export default function Settings() {
                 inputMode="text"
                 value={openingBalance}
                 onChange={(e) => setOpeningBalance(e.target.value)}
+                placeholder="Misalnya, 50.000 atau -50.000"
                 disabled={savingBalance}
                 aria-invalid={Boolean(balanceError)}
                 aria-describedby="opening-help"
@@ -553,6 +555,7 @@ export default function Settings() {
             id="reset-confirm"
             value={resetText}
             onChange={(e) => setResetText(e.target.value)}
+            placeholder="HAPUS"
             autoComplete="off"
             disabled={resetBusy}
           />
