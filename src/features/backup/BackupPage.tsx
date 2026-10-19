@@ -34,6 +34,7 @@ import {
 } from "../../domain/ledger";
 import type { Ledger } from "../../domain/ledger";
 import { ledgerTotals } from "../../domain/planning";
+import { EncryptedBackup } from "./EncryptedBackup";
 
 interface Preview {
   backup: Backup;
@@ -221,6 +222,13 @@ export default function BackupPage() {
         </span>
       </div>
       {error && <ErrorNotice>{error}</ErrorNotice>}
+      <EncryptedBackup
+        onRestore={async (backup, filename) => {
+          setPreview({ backup, filename, current: await db.snapshot() });
+          setMode("merge");
+          setConfirmText("");
+        }}
+      />
       <section className="surface backup-export">
         <div className="section-heading">
           <div>
