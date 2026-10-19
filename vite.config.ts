@@ -8,7 +8,21 @@ const contentPolicy =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
 
 export default defineConfig({
+  server: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      "/api": {
+        target: process.env.RANLEDGER_API_TARGET ?? "http://127.0.0.1:8787",
+      },
+    },
+  },
   preview: {
+    proxy: {
+      "/api": {
+        target: process.env.RANLEDGER_API_TARGET ?? "http://127.0.0.1:8787",
+      },
+    },
     headers: {
       "Content-Security-Policy": `${contentPolicy}; frame-ancestors 'none'`,
       "X-Content-Type-Options": "nosniff",

@@ -1,0 +1,12 @@
+node_modules
+.git
+.cache
+dist
+dist-server
+.env
+.env.*
+!.env.example
+.codex
+.agents
+e2e
+server/*.test.ts

@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 .cache
+.env
+.env.*
+!.env.example
+dist-server
 test-results
 playwright-report
 *.local
