@@ -22,6 +22,9 @@ export interface CsvMapping {
   expenseCategoryId: string;
 }
 export interface CsvPreviewRow {
+  matchedId?: string;
+  similarId?: string;
+  reconciled?: boolean;
   line: number;
   transaction: Transaction | null;
   error: string;
@@ -147,6 +150,7 @@ export function transactionFingerprint(t: Transaction) {
     t.kind,
     t.amount,
     t.walletId,
+    Boolean(t.refund),
     t.note.trim().toLocaleLowerCase("id-ID").replace(/\s+/g, " "),
   ]);
 }
@@ -156,6 +160,15 @@ export function buildCsvPreview(
   ledger: Ledger,
 ): CsvPreviewRow[] {
   const fingerprints = new Set(ledger.transactions.map(transactionFingerprint));
+  const matches = new Map(
+    ledger.transactions.map((t) => [transactionFingerprint(t), t.id]),
+  );
+  const similar = new Map(
+    ledger.transactions.map((t) => [
+      JSON.stringify([t.date, t.kind, t.amount, t.walletId]),
+      t.id,
+    ]),
+  );
   const categories = new Map(
     ledger.categories
       .filter((c) => !c.archived)
@@ -230,7 +243,7 @@ export function buildCsvPreview(
         amount = Math.abs(amount);
       }
       if (amount === 0) throw new Error("Nominal harus lebih dari nol.");
-      const categoryId =
+      let categoryId =
         categories.get(
           `${kind}:${get(mapping.category).toLocaleLowerCase("id-ID")}`,
         ) ??
@@ -240,6 +253,16 @@ export function buildCsvPreview(
       if (validCategories.get(categoryId) !== kind)
         throw new Error("Pilih kategori default yang sesuai untuk jenis ini.");
       const note = get(mapping.note);
+      const rule = ledger.rules.find(
+        (r) =>
+          r.enabled &&
+          r.kind === kind &&
+          note
+            .toLocaleLowerCase("id-ID")
+            .includes(r.contains.toLocaleLowerCase("id-ID")) &&
+          validCategories.get(r.categoryId) === kind,
+      );
+      if (rule) categoryId = rule.categoryId;
       if (note.length > 500) throw new Error("Catatan maksimal 500 karakter.");
       const transaction: Transaction = {
         id: crypto.randomUUID(),
@@ -260,6 +283,10 @@ export function buildCsvPreview(
         transaction,
         error: "",
         duplicate,
+        matchedId: matches.get(fingerprint),
+        similarId: similar.get(
+          JSON.stringify([date, kind, amount, mapping.walletId]),
+        ),
         include: !duplicate,
       };
     } catch (e) {

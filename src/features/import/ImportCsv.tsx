@@ -162,6 +162,9 @@ export default function ImportCsv() {
   }
   const selected =
     preview?.rows.filter((r) => r.include && r.transaction) ?? [];
+  const reconciled =
+    preview?.rows.filter((r) => r.reconciled && (r.matchedId || r.similarId)) ??
+    [];
   const stale = Boolean(preview && preview.revision !== ledger.revision);
   const duplicates = preview?.rows.filter((r) => r.duplicate).length ?? 0;
   const invalid = preview?.rows.filter((r) => r.error).length ?? 0;
@@ -198,7 +201,13 @@ export default function ImportCsv() {
     );
   }
   async function commit() {
-    if (!preview || stale || !selected.length || lock.current) return;
+    if (
+      !preview ||
+      stale ||
+      (!selected.length && !reconciled.length) ||
+      lock.current
+    )
+      return;
     lock.current = true;
     setBusy("import");
     setError("");
@@ -206,10 +215,15 @@ export default function ImportCsv() {
       await db.importTransactions(
         selected.map((r) => r.transaction!),
         preview.revision,
+        filename,
+        reconciled.map((r) => ({
+          line: r.line,
+          transactionId: r.matchedId ?? r.similarId!,
+        })),
       );
       setSuccess(selected.length);
       notify(
-        `${selected.length.toLocaleString("id-ID")} transaksi CSV tersimpan.`,
+        `${selected.length.toLocaleString("id-ID")} transaksi baru dan ${reconciled.length} pencocokan tersimpan.`,
       );
       setConfirm(false);
       setPreview(null);
@@ -230,6 +244,51 @@ export default function ImportCsv() {
         title="Impor CSV"
         description="Pindahkan transaksi dari bank atau aplikasi lain dengan pratinjau sebelum menyimpan."
       />
+      <div className="v3-actions import-links">
+        <Link className="text-link" to="/rekonsiliasi">
+          Riwayat impor & aturan kategori
+        </Link>
+        {data && (
+          <>
+            <button
+              className="button secondary small-button"
+              onClick={() =>
+                void db.syncState
+                  .put({
+                    id: "csvPreset",
+                    value: { headers: data.headers, mapping },
+                  })
+                  .then(() => notify("Pemetaan disimpan di perangkat ini."))
+              }
+            >
+              Simpan pemetaan
+            </button>
+            <button
+              className="button secondary small-button"
+              onClick={() =>
+                void db.syncState.get("csvPreset").then((saved) => {
+                  const preset = saved?.value as
+                    { headers: string[]; mapping: CsvMapping } | undefined;
+                  if (
+                    !preset ||
+                    JSON.stringify(preset.headers) !==
+                      JSON.stringify(data.headers)
+                  ) {
+                    setError(
+                      "Pemetaan tersimpan tidak cocok dengan nama kolom file ini.",
+                    );
+                    return;
+                  }
+                  setMapping(preset.mapping);
+                  setPreview(null);
+                })
+              }
+            >
+              Gunakan pemetaan tersimpan
+            </button>
+          </>
+        )}
+      </div>
       <ol className="import-steps" aria-label="Tahap impor">
         <li className={!data ? "current" : ""}>
           1 <span>Pilih file</span>
@@ -443,10 +502,16 @@ export default function ImportCsv() {
             </div>
             <button
               className="button primary"
-              disabled={Boolean(busy) || stale || !selected.length}
+              disabled={
+                Boolean(busy) ||
+                stale ||
+                (!selected.length && !reconciled.length)
+              }
               onClick={() => setConfirm(true)}
             >
-              Impor {selected.length.toLocaleString("id-ID")} transaksi
+              {selected.length
+                ? `Impor ${selected.length.toLocaleString("id-ID")} transaksi`
+                : `Konfirmasi ${reconciled.length} pencocokan`}
             </button>
           </div>
           <div className="inline-help">
@@ -479,6 +544,7 @@ export default function ImportCsv() {
                           rows: preview.rows.map((r) => ({
                             ...r,
                             include: Boolean(r.transaction) && e.target.checked,
+                            reconciled: false,
                           })),
                         })
                       }
@@ -503,6 +569,7 @@ export default function ImportCsv() {
                         onChange={(e) =>
                           updateRow((page - 1) * 30 + i, {
                             include: e.target.checked,
+                            reconciled: false,
                           })
                         }
                       />
@@ -557,6 +624,26 @@ export default function ImportCsv() {
                         : r.duplicate
                           ? "Periksa duplikat"
                           : "Siap"}
+                      {(r.matchedId || r.similarId) && (
+                        <label className="csv-match">
+                          <input
+                            type="checkbox"
+                            aria-label={`Cocokkan baris ${r.line} dengan transaksi yang ada`}
+                            checked={Boolean(r.reconciled)}
+                            onChange={(e) =>
+                              updateRow((page - 1) * 30 + i, {
+                                reconciled: e.target.checked,
+                                include: false,
+                              })
+                            }
+                          />
+                          {r.reconciled
+                            ? "Dicocokkan"
+                            : r.matchedId
+                              ? "Cocok persis"
+                              : "Tanggal & nominal sama"}
+                        </label>
+                      )}
                     </td>
                   </tr>
                 ))}
