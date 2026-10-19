@@ -23,6 +23,9 @@ import {
   PieChart,
   FileUp,
   MoreHorizontal,
+  Users,
+  Landmark,
+  CalendarDays,
 } from "lucide-react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -30,9 +33,17 @@ import {
   LedgerProvider,
   StorageError,
   useLedger,
+  useCanEdit,
 } from "./components/LedgerProvider";
 import { Logo } from "./components/ui";
 import Dashboard from "./features/dashboard/Dashboard";
+import { CloudProvider, useCloud } from "./data/cloud";
+const CloudPage = lazy(() => import("./features/cloud/CloudPage"));
+const Liabilities = lazy(() => import("./features/liabilities/Liabilities"));
+const Calendar = lazy(() => import("./features/calendar/Calendar"));
+const Reconciliation = lazy(
+  () => import("./features/reconciliation/Reconciliation"),
+);
 const Transactions = lazy(() => import("./features/transactions/Transactions"));
 const TransactionDialog = lazy(
   () => import("./features/transactions/TransactionDialog"),
@@ -77,8 +88,26 @@ const navigation = [
   },
   { to: "/laporan", label: "Laporan", mobile: "Laporan", icon: BarChart3 },
   { to: "/dompet", label: "Dompet", mobile: "Dompet", icon: Wallet },
+  {
+    to: "/kewajiban",
+    label: "Tagihan & cicilan",
+    mobile: "Kewajiban",
+    icon: Landmark,
+  },
   { to: "/anggaran", label: "Anggaran", mobile: "Anggaran", icon: PieChart },
   { to: "/rencana", label: "Rencana", mobile: "Rencana", icon: CalendarClock },
+  {
+    to: "/kalender",
+    label: "Kalender & proyeksi",
+    mobile: "Kalender",
+    icon: CalendarDays,
+  },
+  {
+    to: "/rekonsiliasi",
+    label: "Rekonsiliasi",
+    mobile: "Rekonsiliasi",
+    icon: FileUp,
+  },
   { to: "/impor", label: "Impor CSV", mobile: "Impor", icon: FileUp },
   {
     to: "/backup",
@@ -92,6 +121,7 @@ const navigation = [
     mobile: "Pengaturan",
     icon: Settings2,
   },
+  { to: "/ruang", label: "Ruang & sinkronisasi", mobile: "Ruang", icon: Users },
 ];
 function UpdateNotice({ editing }: { editing: boolean }) {
   const [openDialog, setOpenDialog] = useState(false);
@@ -153,6 +183,8 @@ function UpdateNotice({ editing }: { editing: boolean }) {
 }
 function Shell() {
   const ledger = useLedger();
+  const cloud = useCloud(),
+    canEdit = useCanEdit();
   const [dialog, setDialog] = useState<Transaction | "new" | null>(null);
   const [more, setMore] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
@@ -184,6 +216,7 @@ function Shell() {
         !e.metaKey &&
         !e.altKey &&
         !dialog &&
+        canEdit &&
         !(
           e.target instanceof HTMLElement &&
           (e.target.isContentEditable ||
@@ -196,7 +229,7 @@ function Shell() {
     }
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
-  }, [dialog]);
+  }, [dialog, canEdit]);
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -206,7 +239,16 @@ function Shell() {
         <Link to="/" className="brand-link" aria-label="Ranledger beranda">
           <Logo />
         </Link>
-        <div className="workspace-label">KEUANGAN PRIBADI</div>
+        <Link className="workspace-selector" to="/ruang">
+          <span className="eyebrow">
+            {cloud.active ? "RUANG TERSINKRON" : "PERANGKAT INI"}
+          </span>
+          <strong>{cloud.active?.name ?? "Keuangan pribadi"}</strong>
+          <small>
+            {cloud.active ? cloud.status : "Lokal · milikmu"}
+            <ChevronRight size={14} />
+          </small>
+        </Link>
         <nav aria-label="Navigasi utama" className="desktop-nav">
           {navigation.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -222,7 +264,12 @@ function Shell() {
             </NavLink>
           ))}
         </nav>
-        <button className="sidebar-add" onClick={() => setDialog("new")}>
+        <button
+          className="sidebar-add"
+          aria-label="Catat transaksi"
+          disabled={!canEdit}
+          onClick={() => setDialog("new")}
+        >
           <Plus size={17} />
           Catat transaksi<kbd>N</kbd>
         </button>
@@ -231,9 +278,11 @@ function Shell() {
             <ShieldCheck size={22} />
             <strong>Catatanmu, milikmu.</strong>
             <p>
-              Tersimpan di perangkat ini.
+              {cloud.active
+                ? "Ruang yang kamu pilih."
+                : "Tersimpan di perangkat ini."}
               <br />
-              Tanpa akun, tanpa cloud.
+              {cloud.active ? cloud.status : "Tanpa akun, tanpa cloud."}
             </p>
             <Link to="/backup">
               Jaga dengan backup <ArrowRight size={14} />
@@ -241,7 +290,8 @@ function Shell() {
           </div>
           <div className="sidebar-footer">
             <span className="local-dot" />
-            Penyimpanan lokal<span>v2.0</span>
+            {cloud.active ? "Lokal + cloud" : "Penyimpanan lokal"}
+            <span>v3.0</span>
           </div>
         </div>
       </aside>
@@ -260,7 +310,7 @@ function Shell() {
               {online ? (
                 <>
                   <span />
-                  Lokal & privat
+                  {cloud.active ? cloud.status : "Lokal & privat"}
                 </>
               ) : (
                 <>
@@ -284,6 +334,18 @@ function Shell() {
             Kamu sedang offline. Catatan tetap tersimpan di perangkat ini.
           </div>
         )}
+        {!canEdit && (
+          <div className="v3-access-banner" role="status">
+            Ruang ini hanya dapat dibaca atau aksesnya telah dicabut.{" "}
+            <Link to="/ruang">Kelola akses ruang</Link>
+          </div>
+        )}
+        {cloud.conflicts && (
+          <div className="v3-access-banner" role="status">
+            Ada perubahan yang perlu ditinjau sebelum sinkronisasi dilanjutkan.{" "}
+            <Link to="/ruang">Selesaikan konflik</Link>
+          </div>
+        )}
         <main id="main-content" className="main-content" tabIndex={-1}>
           <Suspense
             fallback={
@@ -297,7 +359,7 @@ function Shell() {
                 path="/"
                 element={
                   <Dashboard
-                    onAdd={() => setDialog("new")}
+                    onAdd={() => canEdit && setDialog("new")}
                     onEdit={setDialog}
                   />
                 }
@@ -306,7 +368,7 @@ function Shell() {
                 path="/transaksi"
                 element={
                   <Transactions
-                    onAdd={() => setDialog("new")}
+                    onAdd={() => canEdit && setDialog("new")}
                     onEdit={setDialog}
                   />
                 }
@@ -319,6 +381,10 @@ function Shell() {
               <Route path="/rencana" element={<Schedules />} />
               <Route path="/rencana/tujuan" element={<Goals />} />
               <Route path="/impor" element={<ImportCsv />} />
+              <Route path="/ruang" element={<CloudPage />} />
+              <Route path="/kewajiban" element={<Liabilities />} />
+              <Route path="/kalender" element={<Calendar />} />
+              <Route path="/rekonsiliasi" element={<Reconciliation />} />
               <Route
                 path="*"
                 element={
@@ -425,9 +491,17 @@ function Shell() {
 export default function App() {
   return (
     <AppBoundary>
-      <LedgerProvider>
-        <Shell />
-      </LedgerProvider>
+      <CloudProvider>
+        <WorkspaceApp />
+      </CloudProvider>
     </AppBoundary>
+  );
+}
+function WorkspaceApp() {
+  const { active } = useCloud();
+  return (
+    <LedgerProvider key={active?.id ?? "local"}>
+      <Shell />
+    </LedgerProvider>
   );
 }

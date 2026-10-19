@@ -175,6 +175,8 @@ svg {
   position: fixed;
   top: -70px;
   left: 16px;
+  opacity: 0;
+  pointer-events: none;
   z-index: 200;
   padding: 12px 20px;
   background: var(--brand);
@@ -183,6 +185,8 @@ svg {
 }
 .skip-link:focus {
   top: 12px;
+  opacity: 1;
+  pointer-events: auto;
 }
 .muted {
   color: var(--muted);

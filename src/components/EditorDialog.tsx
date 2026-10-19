@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./ui";
-import { useNotify } from "./LedgerProvider";
+import { useNotify, useCanEdit } from "./LedgerProvider";
 import { errorMessage } from "../domain/ledger";
 export function EditorDialog({
   title,
@@ -23,11 +23,16 @@ export function EditorDialog({
   success?: string;
 }) {
   const notify = useNotify();
+  const canEdit = useCanEdit();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [deleting, setDeleting] = useState(false);
   const lock = useRef(false);
   async function submit(remove = false) {
+    if (!canEdit) {
+      setError("Ruang ini hanya dapat dibaca.");
+      return;
+    }
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -71,7 +76,7 @@ export function EditorDialog({
             <button
               type="button"
               className="button text-danger delete-button"
-              disabled={busy}
+              disabled={busy || !canEdit}
               onClick={() => setDeleting(true)}
             >
               Hapus
@@ -88,7 +93,7 @@ export function EditorDialog({
           <button
             type="submit"
             className={`button ${deleting ? "danger" : "primary"}`}
-            disabled={busy}
+            disabled={busy || !canEdit}
           >
             {busy ? "Menyimpan…" : deleting ? "Ya, hapus" : saveLabel}
           </button>

@@ -212,7 +212,11 @@ export function TransactionList({
             <span>
               <strong>{t.note || categories.get(t.categoryId)?.name}</strong>
               <small>
-                {t.kind === "income" ? "Pemasukan" : "Pengeluaran"}
+                {t.refund
+                  ? "Refund"
+                  : t.kind === "income"
+                    ? "Pemasukan"
+                    : "Pengeluaran"}
                 {` · ${wallets.get(t.walletId) ?? "Dompet"}`}
                 {compact &&
                   ` · ${dateLabel(t.date, ledger.preferences.dateFormat)}`}
@@ -236,8 +240,10 @@ export function TransactionList({
           <span className="transaction-date">
             {dateLabel(t.date, ledger.preferences.dateFormat)}
           </span>
-          <span className={`transaction-amount ${t.kind}`}>
-            {t.kind === "income" ? "+" : "−"}
+          <span
+            className={`transaction-amount ${t.refund ? "income" : t.kind}`}
+          >
+            {t.kind === "income" || t.refund ? "+" : "−"}
             {money(t.amount, ledger.preferences.hideAmounts)}
           </span>
           <ChevronRight size={15} className="row-chevron" />
@@ -408,7 +414,8 @@ export function CategoryBreakdown({
       if (transaction.kind === "expense")
         totals.set(
           transaction.categoryId,
-          (totals.get(transaction.categoryId) ?? 0) + transaction.amount,
+          (totals.get(transaction.categoryId) ?? 0) +
+            (transaction.refund ? -transaction.amount : transaction.amount),
         );
     const names = new Map(
       categories.map((category) => [category.id, category.name]),
