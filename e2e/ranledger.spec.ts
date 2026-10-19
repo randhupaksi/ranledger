@@ -803,15 +803,17 @@ async function cloudLogin(page: Page, email: string) {
     page.getByRole("heading", { name: "Synthetic owner", exact: true }),
   ).toBeVisible();
 }
+async function expectSynced(page: Page) {
+  await expect(page.locator(".v3-statement p")).toContainText("Tersinkron", {
+    timeout: 20000,
+  });
+}
 async function manualSync(page: Page) {
   await page.goto(origin + "/ruang");
   await page
     .getByRole("button", { name: "Sinkronkan sekarang", exact: true })
     .click();
-  await expect(page.locator(".workspace-selector small")).toContainText(
-    "Tersinkron",
-    { timeout: 20000 },
-  );
+  await expectSynced(page);
 }
 test("v3: dua perangkat, offline queue, konflik, dan ledger lokal terpisah", async ({
   ledgerPage: page,
@@ -827,10 +829,7 @@ test("v3: dua perangkat, offline queue, konflik, dan ledger lokal terpisah", asy
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Buat ruang", exact: true }).click();
   await download;
-  await expect(page.locator(".workspace-selector small")).toContainText(
-    "Tersinkron",
-    { timeout: 20000 },
-  );
+  await expectSynced(page);
   const browser = await chromium.launch({
     ...(browserChannel ? { channel: browserChannel } : {}),
     headless: true,
@@ -845,10 +844,7 @@ test("v3: dua perangkat, offline queue, konflik, dan ledger lokal terpisah", asy
     await second
       .getByRole("button", { name: "Buka ruang", exact: true })
       .click();
-    await expect(second.locator(".workspace-selector small")).toContainText(
-      "Tersinkron",
-      { timeout: 20000 },
-    );
+    await expectSynced(second);
     await second.goto(origin + "/transaksi");
     await expect(second.locator(".transaction-row")).toHaveCount(1);
     await second.evaluate(async () => {
@@ -942,10 +938,7 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
   await cloudSignup(page, `owner-${crypto.randomUUID()}@example.test`);
   await page.getByLabel("Ruang baru", { exact: true }).fill("Rumah tangga");
   await page.getByRole("button", { name: "Buat ruang", exact: true }).click();
-  await expect(page.locator(".workspace-selector small")).toContainText(
-    "Tersinkron",
-    { timeout: 20000 },
-  );
+  await expectSynced(page);
   await choose(page, "Peran undangan", "Pembaca");
   await page
     .getByRole("button", { name: "Buat undangan", exact: true })
@@ -968,10 +961,7 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
     await reader
       .getByRole("button", { name: "Buka ruang", exact: true })
       .click();
-    await expect(reader.locator(".workspace-selector small")).toContainText(
-      "Tersinkron",
-      { timeout: 20000 },
-    );
+    await expectSynced(reader);
     await expect(reader.locator(".sidebar-add")).toBeDisabled();
     await expect(reader.locator(".v3-access-banner")).toContainText("dibaca");
     await page
@@ -986,8 +976,8 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
     await reader
       .getByRole("button", { name: "Sinkronkan sekarang", exact: true })
       .click();
-    await expect(reader.locator(".workspace-selector strong")).toHaveText(
-      "Keuangan pribadi",
+    await expect(reader.locator(".connection-state")).toContainText(
+      "Lokal & privat",
       { timeout: 15000 },
     );
   } finally {
