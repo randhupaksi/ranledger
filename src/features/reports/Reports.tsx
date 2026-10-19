@@ -26,6 +26,7 @@ import {
 import type { DateRange, Transaction } from "../../domain/ledger";
 import { WalletPicker, ProgressMeter } from "../../components/planning-ui";
 import { budgetProgresses, monthLabel } from "../../domain/planning";
+import { FinancialPosition } from "./FinancialPosition";
 
 function chartBuckets(transactions: Transaction[], range: DateRange) {
   if (!transactions.length) return [];
@@ -59,7 +60,7 @@ function chartBuckets(transactions: Transaction[], range: DateRange) {
       count - 1,
       Math.floor(((day - startDay) / span) * count),
     );
-    if (i >= 0) buckets[i][t.kind] += t.amount;
+    if (i >= 0) buckets[i][t.kind] += t.refund ? -t.amount : t.amount;
   }
   return buckets;
 }
@@ -119,7 +120,7 @@ function CashflowChart({
                   <div
                     className="chart-bar expense-bar"
                     style={{
-                      height: `${(b.expense / max) * 100}%`,
+                      height: `${Math.max(0, (b.expense / max) * 100)}%`,
                       minHeight: b.expense ? 3 : 0,
                     }}
                     title={`Pengeluaran ${money(b.expense, hidden)}`}
@@ -271,7 +272,7 @@ export default function Reports() {
       />
       <div className="report-period">
         <div>
-          <h2>Ringkasan arus kas</h2>
+          <h2>Pemasukan & pengeluaran</h2>
           <p>{label}</p>
         </div>
         <div className="report-filters">
@@ -284,6 +285,7 @@ export default function Reports() {
           <PeriodPicker period={period} range={range} onChange={update} />
         </div>
       </div>
+      <FinancialPosition range={range} walletId={walletId} />
       <section className="period-summary report-summary">
         <Link to={`/transaksi?${query}&kind=income`} className="summary-item">
           <span className="summary-label">

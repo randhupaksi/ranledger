@@ -8,7 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { useMemo } from "react";
+import { useMemo, lazy, Suspense } from "react";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
 import {
   CategoryBreakdown,
@@ -29,6 +29,11 @@ import {
 import type { Transaction } from "../../domain/ledger";
 import { ledgerTotals } from "../../domain/planning";
 import PlanningOverview from "./PlanningOverview";
+const FinancialBriefing = lazy(() =>
+  import("./FinancialBriefing").then((module) => ({
+    default: module.FinancialBriefing,
+  })),
+);
 
 export default function Dashboard({
   onAdd,
@@ -88,13 +93,16 @@ export default function Dashboard({
           </button>
         }
       />
+      <Suspense fallback={null}>
+        <FinancialBriefing />
+      </Suspense>
       {!ledger.preferences.onboarded && (
         <div className="welcome-note">
           <ShieldCheck size={21} />
           <p>
-            <strong>Selamat datang di Ranledger.</strong> Langsung mulai, tanpa
-            akun. Catatan disimpan di browser ini. Buat backup untuk menjaga
-            salinannya.
+            <strong>Selamat datang di Ranledger.</strong> Mulai dari satu
+            catatan, periksa ruang aktif sebelum mencatat, dan buat backup untuk
+            menjaga salinannya.
           </p>
           <button
             className="text-link"
