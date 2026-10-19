@@ -1,8 +1,8 @@
 # Ranledger
 
-Aplikasi keuangan pribadi berbahasa Indonesia untuk mencatat pemasukan dan pengeluaran tanpa akun. Catatan disimpan di browser pada perangkat pengguna. Tidak ada backend, analytics, session replay, atau sinkronisasi cloud.
+Aplikasi keuangan pribadi berbahasa Indonesia dengan pencatatan lokal, dukungan offline, serta akun dan sinkronisasi cloud opsional. Mode lokal menyimpan data di browser; pengguna yang mengaktifkan cloud memakai API dan database server. Tidak ada analytics atau session replay.
 
-Versi **2.0.0** menambahkan dompet dan transfer, anggaran bulanan, transaksi rutin, target tabungan, serta impor CSV. Aturan produk, migrasi v1, dan kompatibilitas backup dijelaskan di [panduan Ranledger 2.0](docs/ranledger-2.0.md).
+Versi **3.0.0** menambahkan akun dan ruang bersama, sinkronisasi antarperangkat, kartu kredit/PayLater/pinjaman, jurnal seimbang, kalender dan simulasi arus kas, rekonsiliasi CSV, serta backup terenkripsi. Baca [panduan implementasi v3](docs/ranledger-3.0.md) dan [kontrak API](docs/api-v3.md). [Panduan 2.0](docs/ranledger-2.0.md) menjelaskan perilaku versi sebelumnya.
 
 ## Menjalankan aplikasi
 
@@ -12,6 +12,10 @@ Gunakan Node.js **24 LTS** (sesuai `.nvmrc`) dan npm. Dependency dikunci dengan 
 npm ci
 npm run dev
 ```
+
+`dev` menjalankan Vite di `http://localhost:5173` dan API di port 8787. API pengembangan memakai PostgreSQL tertanam PGlite dalam `.cache/server-data`; tidak perlu akun layanan eksternal. Salin `.env.example` ke `.env` bila perlu mengatur origin atau koneksi. `APP_ORIGIN` harus persis sama dengan alamat aplikasi. `npm run dev:web` hanya menjalankan frontend, `npm run dev:api` hanya menjalankan API. Membuat akun tidak otomatis mengunggah ledger lokal.
+
+Produksi cloud memerlukan `DATABASE_URL` PostgreSQL dan `APP_ORIGIN` HTTPS. Tanpa kedua variabel tersebut, fungsi API mengembalikan status belum dikonfigurasi dan mode lokal tetap tersedia. Backend tersedia melalui fungsi `api/[...path].ts` untuk Vercel atau `npm run start:api` pada server Node 24. Data produksi dan layanan eksternal tidak disiapkan otomatis oleh perintah build.
 
 Build dan pratinjau produksi, termasuk mode offline:
 
@@ -25,6 +29,12 @@ Service worker aktif di build produksi. Tunggu pemberitahuan kesiapan offline se
 Penyimpanan terikat ke alamat situs (protokol, host, dan port), selain browser/perangkat. Berpindah dari server dev ke preview, mengganti port, atau pindah domain tidak memindahkan data otomatis. Buat backup lalu pulihkan di alamat tujuan.
 
 ## Fitur
+
+- **Ruang & sinkronisasi:** registrasi/login, recovery code satu kali, sesi perangkat, cloud opt-in, antrean offline, retry idempotent, konflik yang ditinjau pengguna, ruang bersama dengan peran pemilik/editor/pembaca, undangan satu kali, audit, ekspor akun, dan penghapusan akun.
+- **Kewajiban:** kartu kredit, PayLater, pinjaman/cicilan, utang awal, siklus tagihan, rencana pembayaran, dan pembayaran melalui transfer agar beban tidak dihitung dua kali. Refund mengurangi pengeluaran kategori.
+- **Kalender & proyeksi:** transaksi mendatang, jadwal, transfer, pembayaran kewajiban, tenggat target, proyeksi 30/90 hari, dan simulasi yang baru menjadi transaksi setelah konfirmasi.
+- **Rekonsiliasi:** pencocokan laporan ke transaksi yang ada, aturan kategori berbasis keterangan, pemetaan CSV tersimpan, riwayat batch, dan pembatalan batch yang belum diedit.
+- **Backup v3:** seluruh data finansial lokal, JSON/Excel v1/v2 tetap dapat dibaca, serta file `.rledger` dengan frasa sandi dan verifikasi pemulihan. Upgrade menyimpan salinan lokal v2 sebelum menambahkan schema v3.
 
 - **Beranda:** saldo gabungan/per dompet, anggaran bulan ini, jadwal berikutnya, progres target, ringkasan periode, transaksi terakhir, rincian pengeluaran, dan pengingat backup setelah tujuh hari.
 - **Dompet:** tunai/bank/e-wallet/tabungan, saldo awal per dompet, arsip, dan transfer antar dompet yang tidak dihitung sebagai arus kas.
@@ -41,9 +51,11 @@ Pada desktop, tekan **N** saat tidak sedang mengisi kontrol untuk membuka pencat
 
 ## Aturan keuangan
 
-Mata uang MVP adalah IDR dalam rupiah bulat, tanpa desimal. Nominal transaksi harus positif, maksimal Rp1 triliun per transaksi. Tanda jenis disimpan terpisah dari nominal. Input berformat `25.000` dan `25000` diterima; `1.5` dan `1,5` ditolak.
+Mata uang adalah IDR dalam rupiah bulat, tanpa desimal. Nominal transaksi harus positif, maksimal Rp1 triliun per transaksi. Tanda jenis disimpan terpisah dari nominal. Input berformat `25.000` dan `25000` diterima; `1.5` dan `1,5` ditolak.
 
 **Saldo tercatat = jumlah saldo awal seluruh dompet + seluruh pemasukan − seluruh pengeluaran.** Saldo awal bisa negatif dan tidak masuk ke pemasukan laporan. Transfer menurunkan saldo dompet asal dan menaikkan saldo dompet tujuan dengan jumlah sama; saldo gabungan tidak berubah. Dompet arsip tetap masuk ke saldo. Seluruh transaksi yang dicatat, termasuk tanggal mendatang jika pengguna memilihnya, masuk ke saldo tercatat. Ringkasan periode menghitung transaksi sesuai rentang yang ditampilkan, terpisah dari saldo keseluruhan.
+
+Akun kewajiban menyimpan utang sebagai saldo negatif. Saldo gabungan merupakan posisi bersih aset dan kewajiban. Pembelian kredit mencatat beban sekali; pembayaran ke akun kredit memakai transfer. Pengembalian dana memakai kategori pengeluaran dan flag refund, sehingga mengurangi beban tanpa menjadi pemasukan baru. Laporan memisahkan pencatatan beban dari pergerakan dana aset. Jurnal lokal adalah proyeksi seimbang dari saldo awal, transaksi, dan transfer; sumber record v2 tetap dipertahankan untuk kompatibilitas.
 
 Tanggal transaksi disimpan sebagai kalender `YYYY-MM-DD` tanpa konversi UTC. Minggu dimulai Senin; hari/minggu/bulan/tahun aktif berakhir pada hari ini. Periode lain bisa dipilih melalui rentang khusus. Timestamp pembuatan/perubahan hanya dipakai untuk metadata dan pengurutan stabil.
 
@@ -55,7 +67,7 @@ Kategori yang diarsipkan tetap tersedia di riwayat dan saat mengedit transaksi l
 
 **Ekspor laporan** mengikuti filter dan hanya untuk dibaca. **Backup lengkap** selalu mencakup seluruh transaksi, kategori (termasuk arsip), saldo awal, dan preferensi. Gunakan JSON sebagai salinan utama. Backup tidak dienkripsi; simpan dengan hati-hati di lokasi yang kamu percaya.
 
-Format backup v2 memiliki identitas `ranledger`, `formatVersion`, `currency`, dan `exportedAt`. Excel memakai sembilan lembar: `Ranledger`, `Transaksi`, `Kategori`, `Pengaturan`, `Dompet`, `Transfer`, `Anggaran`, `Jadwal`, dan `Tujuan`. Backup JSON/Excel v1 tetap dapat diimpor; saldo awal dan transaksi lama dipetakan ke dompet Utama. Kolom, jenis nilai, dan ID harus tetap utuh agar dapat dipulihkan. File Excel umum bukan format pemulihan; gunakan impor CSV untuk data dari aplikasi lain. Sel teks seperti catatan yang diawali `=` diekspor sebagai teks, bukan rumus. File yang berisi rumus atau VBA ditolak.
+Format backup v3 memiliki identitas `ranledger`, `formatVersion`, `currency`, dan `exportedAt`. Excel memakai sembilan lembar utama beserta `DataV3` untuk aturan kewajiban, kategori otomatis, dan riwayat batch. Backup JSON/Excel v1/v2 tetap dapat diimpor; saldo awal dan transaksi lama v1 dipetakan ke dompet Utama. Kolom, jenis nilai, dan ID harus tetap utuh agar dapat dipulihkan. File Excel umum bukan format pemulihan; gunakan impor CSV untuk data dari aplikasi lain. Sel teks seperti catatan yang diawali `=` diekspor sebagai teks, bukan rumus. File yang berisi rumus atau VBA ditolak. File JSON/Excel biasa tidak dienkripsi; gunakan backup `.rledger` untuk enkripsi frasa sandi.
 
 - **Gabung:** transaksi ber-ID baru ditambahkan. ID yang sudah ada dilewati dan versi lokal dipertahankan, termasuk ketika isi berbeda; jumlah konflik ditampilkan. Dompet dengan ID/nama sama memakai saldo awal lokal; dompet baru membawa saldo awalnya. Preferensi lokal dipertahankan. Kategori dengan ID sama memakai versi lokal; kategori baru bernama/berjenis sama diarahkan ke kategori lokal. Jenis kategori yang bertentangan ditolak. Konflik anggaran dan target pada dompet sama memakai versi lokal. Kunci kejadian jadwal mencegah transaksi rutin ganda. Isi sama dengan ID berbeda tetap merupakan transaksi berbeda untuk transaksi biasa.
 - **Ganti:** transaksi, kategori, saldo awal, dan preferensi diganti seluruhnya dari file. Diperlukan pratinjau dan ketikan `GANTI`. Backup lokal tersedia sebelum melanjutkan.
@@ -69,11 +81,14 @@ Batas file impor adalah 256 MB untuk JSON dan 32 MB untuk Excel, dengan batas ba
 | Lokasi | Tanggung jawab |
 | --- | --- |
 | `src/domain/ledger.ts` | Tipe, validasi uang/tanggal, perhitungan dan filter |
-| `src/domain/validation.ts` | Schema dan integritas referensi ledger v2 |
+| `src/domain/validation.ts` | Schema dan integritas referensi ledger v3 |
 | `src/domain/planning.ts` | Saldo dompet, progres anggaran dan kejadian jadwal |
 | `src/data/database.ts` | Penyimpanan Dexie, operasi atomik, konflik antar-tab |
-| `src/data/backup.ts` | Format v2, kompatibilitas v1, Excel/JSON, perencanaan impor dan unduhan |
+| `src/data/backup.ts` | Format v3, kompatibilitas v1/v2, Excel/JSON, perencanaan impor dan unduhan |
 | `src/data/csv.ts`, `csv.worker.ts` | Parser, pemetaan, deteksi duplikat dan worker impor CSV |
+| `src/domain/finance.ts`, `forecast.ts`, `sync.ts` | Jurnal, posisi aset/kewajiban, kalender, proyeksi, dan penggabungan konflik |
+| `src/data/cloud.tsx`, `encrypted-backup.ts` | Aktivasi cloud, antrean persisten, transport bertahap, serta enkripsi backup |
+| `server`, `api` | API Hono, autentikasi, otorisasi ruang, PostgreSQL/PGlite, dan adaptor Vercel |
 | `src/components` | Konteks data, dialog aksesibel dan pola tampilan bersama |
 | `src/features` | Beranda, transaksi, laporan, backup dan pengaturan |
 | `src/style.css` | Token terang/gelap, tampilan halaman dan responsivitas |
@@ -97,7 +112,7 @@ Playwright menggunakan Microsoft Edge yang terpasang (`channel: msedge`) dalam p
 
 ## CI dan deployment
 
-GitHub Actions menjalankan lint, pemeriksaan format, unit test, build TypeScript/Vite, lalu browser test untuk setiap pull request ke `main`, push ke `main`, dan pemicu manual. Runner CI memasang Chromium untuk Playwright; pengembangan lokal tetap memakai Microsoft Edge bila tersedia.
+GitHub Actions menjalankan lint, pemeriksaan format, unit/integration test dengan PostgreSQL 17 sintetis, build TypeScript/Vite, lalu browser test untuk setiap pull request ke `main`, push ke `main`, dan pemicu manual. Runner CI memasang Chromium untuk Playwright; pengembangan lokal tetap memakai Microsoft Edge bila tersedia. Browser test menjalankan backend terpisah pada port 8788 dengan database memori dan origin preview 4173.
 
 Vercel menangani deployment otomatis setelah repository Ranledger dihubungkan melalui Git Integration. Setiap perubahan pada `main` akan membangun `dist` dengan Node 24 dan menerbitkan versi produksi. Pull request akan menerima preview deployment. File `vercel.json` menyediakan fallback SPA, header keamanan yang setara dengan hosting lain, dan cache panjang untuk aset build yang memiliki hash.
 
@@ -111,4 +126,4 @@ Hasil build berada di `dist`. Hosting harus menyediakan **HTTPS**, fallback SPA 
 
 Kebijakan membatasi script/koneksi ke origin sendiri, menolak object/frame embedding melalui header, mematikan akses kamera/mikrofon/lokasi, dan mengirim `nosniff` serta `no-referrer`. Jangan menambahkan script pihak ketiga yang mengakses data keuangan tanpa meninjau ulang kebijakan privasi.
 
-Penyimpanan browser tetap bisa hilang jika pengguna menghapus data situs, memakai mode privat, kehilangan perangkat, atau browser menghapus data. Persistensi browser bukan pengganti backup. Siapa pun dengan akses ke browser yang sama bisa membaca catatan; MVP belum memiliki PIN, enkripsi, akun, atau pemulihan lewat server. Verifikasi lintas Safari/Firefox/perangkat fisik, restart sistem operasi, dan konfigurasi hosting produksi tetap diperlukan sebelum peluncuran publik.
+Penyimpanan browser tetap bisa hilang jika pengguna menghapus data situs, memakai mode privat, kehilangan perangkat, atau browser menghapus data. Persistensi browser bukan pengganti backup. Isi IndexedDB belum dienkripsi dan dapat dibaca orang yang menguasai profil browser. Mode cloud memakai autentikasi dan izin server, bukan enkripsi end-to-end; perlindungan disk server mengikuti konfigurasi penyedia PostgreSQL. Recovery code harus disimpan pengguna karena email pemulihan otomatis belum dikirim. Verifikasi lintas Safari/Firefox/perangkat fisik dan konfigurasi hosting produksi tetap diperlukan sebelum peluncuran publik.
