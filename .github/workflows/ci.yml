@@ -77,5 +77,18 @@ jobs:
         timeout-minutes: 10
 
       - name: Run browser tests
+        id: browser-tests
         run: npm run test:e2e
         timeout-minutes: 12
+
+      - name: Upload browser failure diagnostics
+        if: ${{ failure() && steps.browser-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        timeout-minutes: 3
+        with:
+          name: playwright-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .cache/test-results/
+            .cache/screenshots/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -7,6 +7,10 @@ export default defineConfig({
   expect: { timeout: 10000 },
   reporter: "list",
   outputDir: ".cache/test-results",
+  use: {
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+  },
   webServer: [
     {
       command: "node node_modules/tsx/dist/cli.mjs server/index.ts",

@@ -87,6 +87,12 @@ async function replaceFromBackup(page: Page) {
   await expect(page.getByRole("dialog")).not.toBeVisible();
 }
 
+async function expectStatusMessage(page: Page, message: string) {
+  await expect(
+    page.getByRole("status").filter({ hasText: message }),
+  ).toContainText(message);
+}
+
 test("pencatatan tanpa akun, saldo awal, edit, hapus, filter, dan persistensi", async ({
   ledgerPage: page,
 }) => {
@@ -96,7 +102,7 @@ test("pencatatan tanpa akun, saldo awal, edit, hapus, filter, dan persistensi", 
   await page.goto(`${origin}/pengaturan`);
   await page.getByLabel("Saldo sebelum transaksi pertama (Rp)").fill("500000");
   await page.getByRole("button", { name: "Simpan saldo awal" }).click();
-  await expect(page.getByRole("status")).toContainText("Saldo awal tersimpan");
+  await expectStatusMessage(page, "Saldo awal tersimpan");
   await page.goto(`${origin}/`);
   await add(page, "2500000", "Proyek website", true);
   await add(page, "35000", "Makan siang <img src=x onerror=alert(1)>");
@@ -162,9 +168,7 @@ test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", asyn
   await upload(page, JSON.stringify(exampleBackup()));
   await expect(page.getByText("Format file valid")).toBeVisible();
   await replaceFromBackup(page);
-  await expect(page.locator(".toast[role='status']")).toContainText(
-    "3 transaksi dipulihkan",
-  );
+  await expectStatusMessage(page, "3 transaksi dipulihkan");
   const jsonDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Unduh JSON" }).click();
   const json = await (await jsonDownload).createReadStream();
@@ -181,9 +185,7 @@ test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", asyn
   await expect(page.getByText("Format file valid")).toBeVisible();
   await page.getByRole("button", { name: "Lanjutkan pemulihan" }).click();
   await page.getByRole("button", { name: "Gabungkan sekarang" }).click();
-  await expect(page.locator(".toast[role='status']")).toContainText(
-    "0 transaksi ditambahkan, 3 ID",
-  );
+  await expectStatusMessage(page, "0 transaksi ditambahkan, 3 ID");
   await upload(page, "{broken", "bad.json");
   await expect(page.getByRole("alert")).toContainText("rusak");
   await page.goto(`${origin}/`);
@@ -339,9 +341,7 @@ test("offline: reload, input, laporan, dan backup bekerja tanpa permintaan pihak
   await expect(page.locator(".balance-amount")).toContainText("25.000");
   await page.goto(`${origin}/backup`);
   await page.getByRole("button", { name: "Uji pemulihan contoh" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "3 transaksi contoh pulih identik",
-  );
+  await expectStatusMessage(page, "3 transaksi contoh pulih identik");
   expect(external).toEqual([]);
   await context.setOffline(false);
 });
