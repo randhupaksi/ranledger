@@ -189,7 +189,7 @@ describe("migrasi dan backup Ranledger 2", () => {
       preferences: { openingBalance: 1_000_000, ...defaultPreferences },
     };
     const migrated = parseBackup(legacy);
-    expect(migrated.formatVersion).toBe(2);
+    expect(migrated.formatVersion).toBe(3);
     expect(migrated.wallets[0].openingBalance).toBe(1_000_000);
     const XLSX = await import("xlsx");
     const book = XLSX.utils.book_new();

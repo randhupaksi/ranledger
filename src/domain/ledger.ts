@@ -21,6 +21,7 @@ export interface Transaction {
   categoryId: string;
   walletId: string;
   occurrenceKey?: string;
+  refund?: boolean;
   date: string;
   note: string;
   createdAt: string;
@@ -41,10 +42,43 @@ export interface Ledger {
   budgets: Budget[];
   schedules: RecurringSchedule[];
   goals: SavingsGoal[];
+  liabilities: LiabilityTerms[];
+  importBatches: ImportBatch[];
+  rules: CategoryRule[];
   preferences: Preferences;
   revision: number;
 }
-export type WalletType = "cash" | "bank" | "ewallet" | "savings";
+export type WalletType =
+  "cash" | "bank" | "ewallet" | "savings" | "credit" | "paylater" | "loan";
+export interface LiabilityTerms {
+  id: string;
+  walletId: string;
+  dueDay: number;
+  statementDay: number;
+  paymentAmount: number;
+  paymentWalletId: string;
+  startDate: string;
+  installments: number;
+  updatedAt: string;
+}
+export interface ImportBatch {
+  id: string;
+  name: string;
+  createdAt: string;
+  transactionIds: string[];
+  fingerprints: string[];
+  matches?: { line: number; transactionId: string }[];
+  undoneAt: string | null;
+  updatedAt: string;
+}
+export interface CategoryRule {
+  id: string;
+  contains: string;
+  categoryId: string;
+  kind: TransactionKind;
+  enabled: boolean;
+  updatedAt: string;
+}
 export interface Wallet {
   id: string;
   name: string;
@@ -101,6 +135,9 @@ export const walletTypes: Record<WalletType, string> = {
   bank: "Rekening bank",
   ewallet: "E-wallet",
   savings: "Tabungan",
+  credit: "Kartu kredit",
+  paylater: "PayLater",
+  loan: "Pinjaman / cicilan",
 };
 export function initialWallet(openingBalance = 0): Wallet {
   return {
@@ -162,6 +199,9 @@ export function emptyLedger(): Ledger {
     budgets: [],
     schedules: [],
     goals: [],
+    liabilities: [],
+    importBatches: [],
+    rules: [],
     preferences: { ...defaultPreferences },
     revision: 0,
   };
@@ -183,7 +223,7 @@ export function totals(transactions: Transaction[], openingBalance = 0) {
     if (transaction.kind === "income") {
       income += transaction.amount;
     } else {
-      expense += transaction.amount;
+      expense += transaction.refund ? -transaction.amount : transaction.amount;
     }
     if (!Number.isSafeInteger(income) || !Number.isSafeInteger(expense))
       throw new Error(
@@ -310,7 +350,10 @@ export function categoryTotals(
   const map = new Map<string, number>();
   for (const t of transactions)
     if (t.kind === kind)
-      map.set(t.categoryId, safeSum([map.get(t.categoryId) ?? 0, t.amount]));
+      map.set(
+        t.categoryId,
+        safeSum([map.get(t.categoryId) ?? 0, t.refund ? -t.amount : t.amount]),
+      );
   const names = new Map(
     categories.map((category) => [category.id, category.name]),
   );

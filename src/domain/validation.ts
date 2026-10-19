@@ -27,6 +27,7 @@ export const transactionSchema = z
     categoryId: idSchema,
     walletId: idSchema,
     occurrenceKey: z.string().max(160).optional(),
+    refund: z.boolean().optional(),
     date: dateSchema,
     note: z.string().max(500),
     createdAt: timeSchema,
@@ -48,7 +49,15 @@ export const walletSchema = z
   .object({
     id: idSchema,
     name: z.string().trim().min(1).max(60),
-    type: z.enum(["cash", "bank", "ewallet", "savings"]),
+    type: z.enum([
+      "cash",
+      "bank",
+      "ewallet",
+      "savings",
+      "credit",
+      "paylater",
+      "loan",
+    ]),
     openingBalance: z.number().int().min(-MAX_AMOUNT).max(MAX_AMOUNT),
     archived: z.boolean(),
     updatedAt: timeSchema,
@@ -107,6 +116,49 @@ export const goalSchema = z
   })
   .strict();
 
+export const liabilitySchema = z
+  .object({
+    id: idSchema,
+    walletId: idSchema,
+    dueDay: z.number().int().min(1).max(31),
+    statementDay: z.number().int().min(1).max(31),
+    paymentAmount: amountSchema,
+    paymentWalletId: idSchema,
+    startDate: dateSchema,
+    installments: z.number().int().min(0).max(600),
+    updatedAt: timeSchema,
+  })
+  .strict();
+export const importBatchSchema = z
+  .object({
+    id: idSchema,
+    name: z.string().min(1).max(100),
+    createdAt: timeSchema,
+    transactionIds: z.array(idSchema).max(MAX_ROWS),
+    fingerprints: z.array(z.string().max(2000)).max(MAX_ROWS),
+    matches: z
+      .array(
+        z
+          .object({ line: z.number().int().min(2), transactionId: idSchema })
+          .strict(),
+      )
+      .max(MAX_ROWS)
+      .optional(),
+    undoneAt: timeSchema.nullable(),
+    updatedAt: timeSchema,
+  })
+  .strict();
+export const ruleSchema = z
+  .object({
+    id: idSchema,
+    contains: z.string().trim().min(1).max(100),
+    categoryId: idSchema,
+    kind: z.enum(["income", "expense"]),
+    enabled: z.boolean(),
+    updatedAt: timeSchema,
+  })
+  .strict();
+
 export function validateLedger(ledger: Ledger): Ledger {
   if (
     ledger.transactions.length + ledger.transfers.length > MAX_ROWS ||
@@ -120,6 +172,9 @@ export function validateLedger(ledger: Ledger): Ledger {
     [ledger.budgets, budgetSchema],
     [ledger.schedules, scheduleSchema],
     [ledger.goals, goalSchema],
+    [ledger.liabilities, liabilitySchema],
+    [ledger.importBatches, importBatchSchema],
+    [ledger.rules, ruleSchema],
   ] as const) {
     if (rows.length > (schema === transferSchema ? MAX_ROWS : 1000))
       throw new Error("Batas jumlah data perencanaan terlampaui.");
@@ -151,6 +206,8 @@ export function validateLedger(ledger: Ledger): Ledger {
   const occurrences = new Set<string>();
   for (const transaction of ledger.transactions) {
     transactionSchema.parse(transaction);
+    if (transaction.refund && transaction.kind !== "expense")
+      throw new Error("Refund harus memakai kategori pengeluaran.");
     if (ids.has(transaction.id))
       throw new Error("ID transaksi ganda ditemukan di file.");
     ids.add(transaction.id);
@@ -201,8 +258,41 @@ export function validateLedger(ledger: Ledger): Ledger {
       throw new Error("Rentang tanggal jadwal tidak valid.");
   }
   const goalWallets = new Set<string>();
+  const liabilityWallets = new Set<string>();
+  for (const term of ledger.liabilities) {
+    const wallet = ledger.wallets.find((w) => w.id === term.walletId);
+    const payment = ledger.wallets.find((w) => w.id === term.paymentWalletId);
+    if (
+      !wallet ||
+      !["credit", "paylater", "loan"].includes(wallet.type) ||
+      !payment ||
+      wallet.archived ||
+      payment.archived ||
+      ["credit", "paylater", "loan"].includes(payment.type)
+    )
+      throw new Error(
+        "Jadwal pembayaran memerlukan akun kewajiban dan sumber dana aset.",
+      );
+    if (liabilityWallets.has(term.walletId))
+      throw new Error("Satu akun hanya memiliki satu aturan pembayaran.");
+    liabilityWallets.add(term.walletId);
+  }
+  for (const batch of ledger.importBatches)
+    if (
+      batch.transactionIds.length !== batch.fingerprints.length ||
+      new Set(batch.transactionIds).size !== batch.transactionIds.length
+    )
+      throw new Error("Riwayat batch impor tidak konsisten.");
+  for (const rule of ledger.rules)
+    if (categoryMap.get(rule.categoryId)?.kind !== rule.kind)
+      throw new Error("Kategori aturan tidak valid.");
   for (const g of ledger.goals) {
-    if (!wallets.has(g.walletId))
+    if (
+      !wallets.has(g.walletId) ||
+      ["credit", "paylater", "loan"].includes(
+        ledger.wallets.find((w) => w.id === g.walletId)!.type,
+      )
+    )
       throw new Error("Dompet tujuan tabungan tidak ditemukan.");
     if (!g.archived && goalWallets.has(g.walletId))
       throw new Error(

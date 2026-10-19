@@ -19,6 +19,9 @@ import {
   scheduleSchema,
   goalSchema,
   validateLedger,
+  liabilitySchema,
+  importBatchSchema,
+  ruleSchema,
 } from "../domain/validation";
 
 const metadata = {
@@ -29,7 +32,7 @@ const metadata = {
 export const backupSchema = z
   .object({
     ...metadata,
-    formatVersion: z.literal(2),
+    formatVersion: z.literal(3),
     transactions: z.array(transactionSchema).max(MAX_ROWS),
     categories: z.array(categorySchema).max(1000),
     preferences: preferencesSchema,
@@ -38,6 +41,9 @@ export const backupSchema = z
     budgets: z.array(budgetSchema).max(1000),
     schedules: z.array(scheduleSchema).max(1000),
     goals: z.array(goalSchema).max(1000),
+    liabilities: z.array(liabilitySchema).max(1000),
+    importBatches: z.array(importBatchSchema).max(1000),
+    rules: z.array(ruleSchema).max(1000),
   })
   .strict();
 const legacySchema = z
@@ -57,7 +63,7 @@ const legacySchema = z
   .strict();
 export interface Backup extends Omit<Ledger, "revision"> {
   app: "ranledger";
-  formatVersion: 2;
+  formatVersion: 3;
   currency: "IDR";
   exportedAt: string;
 }
@@ -73,7 +79,7 @@ export function createBackup(
   return backupSchema.parse({
     ...data,
     app: "ranledger",
-    formatVersion: 2,
+    formatVersion: 3,
     currency: "IDR",
     exportedAt,
   });
@@ -84,6 +90,14 @@ export function parseBackup(value: unknown): Backup {
       ? value.formatVersion
       : undefined;
   let input = value;
+  if (version === 2 && value && typeof value === "object")
+    input = {
+      ...value,
+      formatVersion: 3,
+      liabilities: [],
+      importBatches: [],
+      rules: [],
+    };
   if (version === 1) {
     const legacy = legacySchema.safeParse(value);
     if (!legacy.success)
@@ -91,7 +105,7 @@ export function parseBackup(value: unknown): Backup {
     const { openingBalance, ...preferences } = legacy.data.preferences;
     input = {
       ...legacy.data,
-      formatVersion: 2,
+      formatVersion: 3,
       preferences,
       transactions: legacy.data.transactions.map((t) => ({
         ...t,
@@ -102,12 +116,15 @@ export function parseBackup(value: unknown): Backup {
       budgets: [],
       schedules: [],
       goals: [],
+      liabilities: [],
+      importBatches: [],
+      rules: [],
     };
   }
   const result = backupSchema.safeParse(input);
   if (!result.success)
     throw new Error(
-      "File tidak sesuai format backup Ranledger versi 1 atau 2. Gunakan backup lengkap, bukan laporan transaksi.",
+      "File tidak sesuai format backup Ranledger versi 1, 2, atau 3. Gunakan backup lengkap, bukan laporan transaksi.",
     );
   validateLedger({ ...result.data, revision: 0 });
   return result.data;
@@ -266,6 +283,39 @@ export function makeImportPlan(
     budgets,
     schedules,
     goals,
+    liabilities: mergeById(
+      current.liabilities,
+      checked.liabilities.map((t) => ({
+        ...t,
+        walletId: walletRemap.get(t.walletId)!,
+        paymentWalletId: walletRemap.get(t.paymentWalletId)!,
+      })),
+    ).filter((t, i, a) => a.findIndex((x) => x.walletId === t.walletId) === i),
+    importBatches: mergeById(
+      current.importBatches,
+      checked.importBatches.map((batch) => ({
+        ...batch,
+        fingerprints: batch.fingerprints.map((text) => {
+          try {
+            const row = JSON.parse(text);
+            return JSON.stringify({
+              ...row,
+              walletId: walletRemap.get(row.walletId) ?? row.walletId,
+              categoryId: categoryRemap.get(row.categoryId) ?? row.categoryId,
+            });
+          } catch {
+            return text;
+          }
+        }),
+      })),
+    ),
+    rules: mergeById(
+      current.rules,
+      checked.rules.map((t) => ({
+        ...t,
+        categoryId: categoryRemap.get(t.categoryId)!,
+      })),
+    ),
   });
   return {
     ledger,
@@ -348,7 +398,11 @@ export async function backupToExcel(backup: Backup): Promise<ArrayBuffer> {
     ["app", "formatVersion", "currency", "exportedAt"],
     [checked],
   );
-  append("Transaksi", sheetFields.Transaksi, checked.transactions);
+  append(
+    "Transaksi",
+    [...sheetFields.Transaksi, "refund"],
+    checked.transactions,
+  );
   append("Kategori", sheetFields.Kategori, checked.categories);
   append("Pengaturan", Object.keys(checked.preferences), [checked.preferences]);
   append("Dompet", sheetFields.Dompet, checked.wallets);
@@ -356,6 +410,20 @@ export async function backupToExcel(backup: Backup): Promise<ArrayBuffer> {
   append("Anggaran", sheetFields.Anggaran, checked.budgets);
   append("Jadwal", sheetFields.Jadwal, checked.schedules);
   append("Tujuan", sheetFields.Tujuan, checked.goals);
+  // Chunks keep every Excel cell below its 32,767 character limit.
+  const extension = JSON.stringify({
+    liabilities: checked.liabilities,
+    importBatches: checked.importBatches,
+    rules: checked.rules,
+  });
+  const points = Array.from(extension),
+    chunks = [];
+  for (let start = 0; start < points.length; start += 8000)
+    chunks.push({
+      index: chunks.length,
+      json: points.slice(start, start + 8000).join(""),
+    });
+  append("DataV3", ["index", "json"], chunks);
   return XLSX.write(workbook, {
     type: "array",
     bookType: "xlsx",
@@ -426,9 +494,14 @@ export async function excelToBackup(buffer: ArrayBuffer): Promise<Backup> {
     throw new Error("Pengaturan backup tidak lengkap atau berulang.");
   const transactions = read(
     "Transaksi",
-    legacy ? transactionHeaders : sheetFields.Transaksi,
+    legacy
+      ? transactionHeaders
+      : meta[0].formatVersion === 3
+        ? [...sheetFields.Transaksi, "refund"]
+        : sheetFields.Transaksi,
   ).map((row) => {
     if (!row.occurrenceKey) delete row.occurrenceKey;
+    if (row.refund === "") delete row.refund;
     return row;
   });
   const base = {
@@ -440,6 +513,19 @@ export async function excelToBackup(buffer: ArrayBuffer): Promise<Backup> {
       lastBackupAt: settings[0].lastBackupAt || null,
     },
   };
+  let extension: Record<string, unknown> = {};
+  if (meta[0].formatVersion === 3) {
+    const chunks = read("DataV3", ["index", "json"]);
+    if (
+      chunks.some((row, i) => row.index !== i || typeof row.json !== "string")
+    )
+      throw new Error("Data tambahan v3 tidak lengkap.");
+    try {
+      extension = JSON.parse(chunks.map((row) => row.json).join(""));
+    } catch {
+      throw new Error("Data tambahan v3 rusak.");
+    }
+  }
   return parseBackup(
     legacy
       ? base
@@ -456,6 +542,7 @@ export async function excelToBackup(buffer: ArrayBuffer): Promise<Backup> {
             endDate: row.endDate || null,
           })),
           goals: read("Tujuan", sheetFields.Tujuan),
+          ...extension,
         },
   );
 }
@@ -516,7 +603,11 @@ export async function exportReport(
     ["Tanggal", "Jenis", "Kategori", "Catatan", "Nominal (IDR)", "Dompet"],
     ...transactions.map((t) => [
       t.date,
-      t.kind === "income" ? "Pemasukan" : "Pengeluaran",
+      t.refund
+        ? "Refund pengeluaran"
+        : t.kind === "income"
+          ? "Pemasukan"
+          : "Pengeluaran",
       categories.get(t.categoryId),
       t.note,
       t.amount,

@@ -18,6 +18,17 @@ import type {
 } from "../domain/ledger";
 import { canUseWallet, nextOccurrence } from "../domain/planning";
 import type { Backup, ImportMode } from "./backup";
+import { canonical } from "../domain/serialization";
+import {
+  entityNames,
+  journalEntries,
+  type JournalEntry,
+} from "../domain/finance";
+import type {
+  LiabilityTerms,
+  ImportBatch,
+  CategoryRule,
+} from "../domain/ledger";
 
 interface Meta {
   id: string;
@@ -30,6 +41,9 @@ export interface PlanningEntities {
   budgets: Budget;
   schedules: RecurringSchedule;
   goals: SavingsGoal;
+  liabilities: LiabilityTerms;
+  importBatches: ImportBatch;
+  rules: CategoryRule;
 }
 export class LedgerDatabase extends Dexie {
   transactions!: Table<Transaction, string>;
@@ -40,6 +54,11 @@ export class LedgerDatabase extends Dexie {
   budgets!: Table<Budget, string>;
   schedules!: Table<RecurringSchedule, string>;
   goals!: Table<SavingsGoal, string>;
+  liabilities!: Table<LiabilityTerms, string>;
+  importBatches!: Table<ImportBatch, string>;
+  rules!: Table<CategoryRule, string>;
+  journal!: Table<JournalEntry, string>;
+  syncState!: Table<{ id: string; value: unknown }, string>;
   constructor(name = "ranledger") {
     super(name);
     this.version(1).stores({
@@ -73,9 +92,99 @@ export class LedgerDatabase extends Dexie {
           .table("meta")
           .put({ ...meta, preferences, revision: (meta.revision ?? 0) + 1 });
       });
+    this.version(3)
+      .stores({
+        liabilities: "id,&walletId",
+        importBatches: "id,createdAt",
+        rules: "id,kind",
+        journal: "id,date",
+        syncState: "id",
+        transactions:
+          "id,date,kind,categoryId,walletId,createdAt,&occurrenceKey,[walletId+date],[kind+date]",
+      })
+      .upgrade(async (tx) => {
+        const [transactions, wallets, transfers] = await Promise.all([
+          tx.table("transactions").toArray(),
+          tx.table("wallets").toArray(),
+          tx.table("transfers").toArray(),
+        ]);
+        const [categories, budgets, schedules, goals, meta] = await Promise.all(
+          [
+            tx.table("categories").toArray(),
+            tx.table("budgets").toArray(),
+            tx.table("schedules").toArray(),
+            tx.table("goals").toArray(),
+            tx.table("meta").get("main"),
+          ],
+        );
+        if (!meta)
+          throw new Error(
+            "Metadata ledger lama tidak lengkap. Upgrade dibatalkan.",
+          );
+        await tx.table("syncState").put({
+          id: "preV3Backup",
+          value: {
+            app: "ranledger",
+            formatVersion: 2,
+            currency: "IDR",
+            exportedAt: new Date().toISOString(),
+            transactions,
+            wallets,
+            transfers,
+            categories,
+            budgets,
+            schedules,
+            goals,
+            preferences: meta.preferences,
+          },
+        });
+        await tx
+          .table("journal")
+          .bulkPut(
+            journalEntries({ transactions, wallets, transfers } as Ledger),
+          );
+      });
+    let projectionReady = false;
+    this.on("ready", () => {
+      projectionReady = true;
+    });
+    for (const name of ["transactions", "wallets", "transfers"] as const) {
+      const project = (row: unknown) => {
+        const source = {
+          transactions: [],
+          wallets: [],
+          transfers: [],
+          [name]: [row],
+        } as unknown as Ledger;
+        return journalEntries(source)[0];
+      };
+      this.table(name).hook("creating", (_key, row, tx) => {
+        if (projectionReady && tx.storeNames.includes("journal"))
+          void tx.table("journal").put(project(row));
+      });
+      this.table(name).hook("updating", (mods, key, row, tx) => {
+        if (projectionReady && tx.storeNames.includes("journal"))
+          void tx.table("journal").put(project({ ...row, ...mods, id: key }));
+      });
+      this.table(name).hook("deleting", (key, _row, tx) => {
+        if (projectionReady && tx.storeNames.includes("journal"))
+          void tx
+            .table("journal")
+            .delete(
+              `${name === "wallets" ? "opening" : name === "transfers" ? "transfer" : "transaction"}_${key}`,
+            );
+      });
+    }
     this.on("populate", async (tx) => {
       await tx.table("categories").bulkAdd(defaultCategories);
       await tx.table("wallets").add(initialWallet());
+      await tx.table("journal").bulkPut(
+        journalEntries({
+          wallets: [initialWallet()],
+          transactions: [],
+          transfers: [],
+        } as unknown as Ledger),
+      );
       await tx
         .table("meta")
         .put({ id: "main", preferences: defaultPreferences, revision: 0 });
@@ -91,6 +200,9 @@ export class LedgerDatabase extends Dexie {
         budgets,
         schedules,
         goals,
+        liabilities,
+        importBatches,
+        rules,
         meta,
       ] = await Promise.all([
         this.transactions.toArray(),
@@ -100,6 +212,9 @@ export class LedgerDatabase extends Dexie {
         this.budgets.toArray(),
         this.schedules.toArray(),
         this.goals.toArray(),
+        this.liabilities.toArray(),
+        this.importBatches.toArray(),
+        this.rules.toArray(),
         this.meta.get("main"),
       ]);
       if (!meta)
@@ -121,12 +236,18 @@ export class LedgerDatabase extends Dexie {
         budgets,
         schedules,
         goals,
+        liabilities,
+        importBatches,
+        rules,
         preferences: meta.preferences,
         revision: meta.revision,
       };
     });
   }
   private async bump() {
+    const access = await this.syncState.get("access");
+    if (access?.value === "viewer" || access?.value === "revoked")
+      throw new Error("Ruang ini hanya dapat dibaca atau akses telah dicabut.");
     const meta = await this.meta.get("main");
     if (!meta) throw new Error("Informasi penyimpanan tidak ditemukan.");
     await this.meta.update("main", { revision: meta.revision + 1 });
@@ -271,6 +392,22 @@ export class LedgerDatabase extends Dexie {
             canUseWallet(current.wallets.find((w) => w.id === id));
         }
       }
+      if (name === "wallets" && old) {
+        const a = old as Wallet,
+          b = entity as Wallet;
+        const liability = (type: string) =>
+          ["credit", "paylater", "loan"].includes(type);
+        if (
+          liability(a.type) !== liability(b.type) &&
+          (current.transactions.some((t) => t.walletId === a.id) ||
+            current.transfers.some(
+              (t) => t.sourceWalletId === a.id || t.targetWalletId === a.id,
+            ))
+        )
+          throw new Error(
+            "Akun yang sudah memiliki riwayat tidak dapat diubah antara aset dan kewajiban. Buat akun baru.",
+          );
+      }
       if (name === "schedules" && (entity as RecurringSchedule).active) {
         const schedule = entity as RecurringSchedule;
         canUseWallet(current.wallets.find((w) => w.id === schedule.walletId));
@@ -367,7 +504,12 @@ export class LedgerDatabase extends Dexie {
       await this.bump();
     });
   }
-  async importTransactions(rows: Transaction[], expectedRevision: number) {
+  async importTransactions(
+    rows: Transaction[],
+    expectedRevision: number,
+    batchName = "Impor CSV",
+    matches: { line: number; transactionId: string }[] = [],
+  ) {
     const { validateLedger } = await import("../domain/validation");
     await this.transaction("rw", this.tables, async () => {
       const current = await this.snapshot();
@@ -381,6 +523,9 @@ export class LedgerDatabase extends Dexie {
       const activeCategories = new Set(
         current.categories.filter((c) => !c.archived).map((c) => c.id),
       );
+      for (const match of matches)
+        if (!current.transactions.some((t) => t.id === match.transactionId))
+          throw new Error("Transaksi pencocokan sudah tidak tersedia.");
       for (const row of rows) {
         if (!activeWallets.has(row.walletId))
           throw new Error("Pilih dompet aktif untuk impor CSV.");
@@ -392,6 +537,17 @@ export class LedgerDatabase extends Dexie {
         transactions: [...current.transactions, ...rows],
       });
       await this.transactions.bulkAdd(rows);
+      const at = new Date().toISOString();
+      await this.importBatches.add({
+        id: crypto.randomUUID(),
+        name: batchName.slice(0, 100),
+        createdAt: at,
+        updatedAt: at,
+        transactionIds: rows.map((t) => t.id),
+        fingerprints: rows.map((t) => canonical(t)),
+        matches,
+        undoneAt: null,
+      });
       await this.bump();
     });
   }
@@ -407,16 +563,11 @@ export class LedgerDatabase extends Dexie {
           "Data berubah setelah pratinjau dibuat. Pilih ulang file untuk memeriksa dampaknya lagi.",
         );
       const plan = makeImportPlan(current, backup, mode);
+      const access = await this.syncState.get("access");
+      if (access?.value === "viewer" || access?.value === "revoked")
+        throw new Error("Ruang ini tidak dapat diubah.");
       const next = validateLedger(plan.ledger);
-      for (const name of [
-        "transactions",
-        "categories",
-        "wallets",
-        "transfers",
-        "budgets",
-        "schedules",
-        "goals",
-      ] as const) {
+      for (const name of entityNames) {
         const table = this[name] as Table<{ id: string }, string>;
         await table.clear();
         await table.bulkAdd(next[name]);
@@ -431,17 +582,7 @@ export class LedgerDatabase extends Dexie {
         JSON.stringify({
           preferences: ledger.preferences,
           records: Object.fromEntries(
-            (
-              [
-                "transactions",
-                "categories",
-                "wallets",
-                "transfers",
-                "budgets",
-                "schedules",
-                "goals",
-              ] as const
-            ).map((name) => [
+            entityNames.map((name) => [
               name,
               [...ledger[name]].sort((a, b) => a.id.localeCompare(b.id)),
             ]),
@@ -456,12 +597,21 @@ export class LedgerDatabase extends Dexie {
   }
   async reset(expectedRevision: number) {
     await this.transaction("rw", this.tables, async () => {
+      if (await this.syncState.get("baseline"))
+        throw new Error(
+          "Reset hanya tersedia untuk ledger lokal. Kelola ruang tersinkron lewat halaman Ruang & sinkronisasi.",
+        );
       const current = await this.snapshot();
       if (current.revision !== expectedRevision)
         throw new Error(
           "Data berubah di tab lain. Tutup konfirmasi dan periksa data sebelum reset.",
         );
-      for (const table of this.tables) await table.clear();
+      for (const name of [...entityNames, "journal"] as const)
+        await this.table(name).clear();
+      const access = await this.syncState.get("access");
+      if (access?.value === "viewer" || access?.value === "revoked")
+        throw new Error("Ruang ini tidak dapat diubah.");
+      await this.syncState.clear();
       await this.categories.bulkAdd(defaultCategories);
       await this.wallets.add(initialWallet());
       await this.meta.put({
@@ -475,5 +625,52 @@ export class LedgerDatabase extends Dexie {
       });
     });
   }
+  async undoImport(id: string) {
+    await this.transaction("rw", this.tables, async () => {
+      const batch = await this.importBatches.get(id);
+      if (!batch || batch.undoneAt)
+        throw new Error("Batch sudah dibatalkan atau tidak ditemukan.");
+      const rows = await this.transactions.bulkGet(batch.transactionIds);
+      rows.forEach((row, i) => {
+        if (
+          !row ||
+          canonical(row) !== canonical(JSON.parse(batch.fingerprints[i]))
+        )
+          throw new Error(
+            "Ada transaksi batch yang sudah diubah/dihapus. Batalkan secara individual agar perubahan tidak hilang.",
+          );
+      });
+      await this.transactions.bulkDelete(batch.transactionIds);
+      const at = new Date().toISOString();
+      await this.importBatches.update(id, { undoneAt: at, updatedAt: at });
+      await this.bump();
+    });
+  }
+  async applyRemote(ledger: Ledger, state?: { id: string; value: unknown }) {
+    const { validateLedger } = await import("../domain/validation");
+    validateLedger(ledger);
+    await this.transaction("rw", this.tables, async () => {
+      for (const name of entityNames) {
+        await this.table(name).clear();
+        await this.table(name).bulkPut(ledger[name]);
+      }
+      const old = await this.meta.get("main");
+      await this.meta.put({
+        id: "main",
+        preferences: old?.preferences ?? ledger.preferences,
+        revision: (old?.revision ?? 0) + 1,
+      });
+      if (state) await this.syncState.put(state);
+    });
+  }
 }
-export const db = new LedgerDatabase();
+export let db = new LedgerDatabase();
+const databases = new Map([["ranledger", db]]);
+export function selectLedger(workspaceId: string | null) {
+  const name = workspaceId ? `ranledger-space-${workspaceId}` : "ranledger";
+  db = databases.get(name) ?? new LedgerDatabase(name);
+  databases.set(name, db);
+  window.dispatchEvent(
+    new CustomEvent("ranledger:workspace", { detail: workspaceId }),
+  );
+}

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useMemo,
   type ReactNode,
 } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -26,8 +27,77 @@ export function useNotify() {
   if (!notify) throw new Error("LedgerProvider tidak tersedia.");
   return notify;
 }
+export function useCanEdit() {
+  const access = useLiveQuery(() => db.syncState.get("access"));
+  return access?.value !== "viewer" && access?.value !== "revoked";
+}
 export function LedgerProvider({ children }: { children: ReactNode }) {
-  const ledger = useLiveQuery(() => db.snapshot());
+  // Each table keeps its array identity when another table changes.
+  const transactions = useLiveQuery(() => db.transactions.toArray());
+  const categories = useLiveQuery(() => db.categories.toArray());
+  const wallets = useLiveQuery(() =>
+    db.wallets
+      .toArray()
+      .then((rows) =>
+        rows.sort((a, b) =>
+          a.id === "main-wallet"
+            ? -1
+            : b.id === "main-wallet"
+              ? 1
+              : a.name.localeCompare(b.name, "id-ID"),
+        ),
+      ),
+  );
+  const transfers = useLiveQuery(() => db.transfers.toArray());
+  const budgets = useLiveQuery(() => db.budgets.toArray());
+  const schedules = useLiveQuery(() => db.schedules.toArray());
+  const goals = useLiveQuery(() => db.goals.toArray());
+  const liabilities = useLiveQuery(() => db.liabilities.toArray());
+  const importBatches = useLiveQuery(() => db.importBatches.toArray());
+  const rules = useLiveQuery(() => db.rules.toArray());
+  const meta = useLiveQuery(() => db.meta.get("main"));
+  const ledger = useMemo<Ledger | undefined>(
+    () =>
+      transactions &&
+      categories &&
+      wallets &&
+      transfers &&
+      budgets &&
+      schedules &&
+      goals &&
+      liabilities &&
+      importBatches &&
+      rules &&
+      meta
+        ? {
+            transactions,
+            categories,
+            wallets,
+            transfers,
+            budgets,
+            schedules,
+            goals,
+            liabilities,
+            importBatches,
+            rules,
+            preferences: meta.preferences,
+            revision: meta.revision,
+          }
+        : undefined,
+    [
+      transactions,
+      categories,
+      wallets,
+      transfers,
+      budgets,
+      schedules,
+      goals,
+      liabilities,
+      importBatches,
+      rules,
+      meta,
+    ],
+  );
   const [toast, setToast] = useState<{
     message: string;
     error: boolean;
