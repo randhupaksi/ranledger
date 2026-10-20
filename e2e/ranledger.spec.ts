@@ -977,7 +977,7 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
       .getByRole("button", { name: "Sinkronkan sekarang", exact: true })
       .click();
     await expect(reader.locator(".connection-state")).toContainText(
-      "Lokal & privat",
+      "By Randhu",
       { timeout: 15000 },
     );
   } finally {

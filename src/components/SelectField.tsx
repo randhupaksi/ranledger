@@ -1,6 +1,6 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 const EMPTY_VALUE = "__ranledger_empty_select_value__";
 
@@ -31,6 +31,8 @@ export function SelectField({
   className?: string;
   "aria-label"?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const pointerDownRef = useRef({ wasOpen: false, pointerType: "" });
   const selectableOptions = required
     ? options.filter((option) => option.value !== "")
     : options;
@@ -38,6 +40,8 @@ export function SelectField({
 
   return (
     <SelectPrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
       value={selectedValue}
       onValueChange={(nextValue) =>
         onValueChange(nextValue === EMPTY_VALUE ? "" : nextValue)
@@ -49,6 +53,42 @@ export function SelectField({
         id={id}
         className={`radix-select-trigger ${className}`.trim()}
         aria-label={ariaLabel}
+        onPointerDown={(event) => {
+          const isPrimaryPress = event.button === 0 && !event.ctrlKey;
+          pointerDownRef.current = {
+            wasOpen: open && isPrimaryPress,
+            pointerType: event.pointerType,
+          };
+
+          if (open && isPrimaryPress && event.pointerType === "mouse") {
+            event.preventDefault();
+            setOpen(false);
+          }
+        }}
+        onClick={(event) => {
+          const { wasOpen, pointerType } = pointerDownRef.current;
+          pointerDownRef.current = { wasOpen: false, pointerType: "" };
+
+          if (wasOpen && event.detail > 0) {
+            event.preventDefault();
+            if (pointerType !== "mouse") setOpen(false);
+          }
+        }}
+        onKeyDown={(event) => {
+          const isOpenKey = ["Enter", " ", "ArrowDown", "ArrowUp"].includes(
+            event.key,
+          );
+          if (
+            open &&
+            isOpenKey &&
+            !event.altKey &&
+            !event.ctrlKey &&
+            !event.metaKey
+          ) {
+            event.preventDefault();
+            setOpen(false);
+          }
+        }}
       >
         <SelectPrimitive.Value
           className="radix-select-value"

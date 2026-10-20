@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./App";
+import { TouchPressFeedback } from "./components/TouchPressFeedback";
 import "./style.css";
 import "./style-v2.css";
 import "./style-v3.css";
@@ -11,6 +12,7 @@ restoreSelection();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
+      <TouchPressFeedback />
       <Routes>
         <Route path="*" element={<App />} />
       </Routes>
