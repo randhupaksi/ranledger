@@ -1,6 +1,12 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { X } from "lucide-react";
-import { createContext, useCallback, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 export const ModalPopoverContainerContext = createContext<HTMLElement | null>(
   null,
