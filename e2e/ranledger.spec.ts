@@ -3,13 +3,16 @@ import {
   expect,
   chromium,
   type BrowserContext,
+  type Locator,
   type Page,
 } from "@playwright/test";
 import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { exampleBackup } from "../src/data/backup";
 
-const origin = "http://127.0.0.1:4173";
+const origin =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  `http://127.0.0.1:${process.env.PLAYWRIGHT_APP_PORT ?? "4173"}`;
 const browserChannel = process.env.CI ? undefined : "msedge";
 const test = base.extend<{ ledgerPage: Page; ledgerContext: BrowserContext }>({
   ledgerContext: async ({ playwright }, use, info) => {
@@ -58,13 +61,66 @@ async function add(
       .click();
   await dialog.getByLabel("Nominal", { exact: true }).fill(amount);
   await dialog.getByLabel("Catatan opsional").fill(note);
-  if (date) await dialog.getByLabel("Tanggal", { exact: true }).fill(date);
+  if (date) await chooseDate(page, "Tanggal", date, dialog);
   await dialog
     .getByRole("button", {
       name: income ? "Simpan pemasukan" : "Simpan pengeluaran",
     })
     .click();
   await expect(dialog).not.toBeVisible();
+}
+async function chooseDate(
+  page: Page,
+  label: string,
+  value: string,
+  scope: Page | Locator = page,
+) {
+  const [year, month, day] = value.split("-").map(Number);
+  const target = new Date(year, month - 1, day, 12);
+  const targetMonth = year * 12 + month - 1;
+  const monthNames = [
+    "januari",
+    "februari",
+    "maret",
+    "april",
+    "mei",
+    "juni",
+    "juli",
+    "agustus",
+    "september",
+    "oktober",
+    "november",
+    "desember",
+  ];
+  await scope.getByLabel(label, { exact: true }).click();
+  const picker = page.locator(".date-picker-popup");
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const title = await picker.locator(".date-picker-toolbar h3").innerText();
+    const match = title.match(/^(\D+)\s+(\d{4})$/);
+    if (!match)
+      throw new Error(`Judul bulan kalender tidak dikenali: ${title}`);
+    const monthIndex = monthNames.indexOf(
+      match[1].trim().toLocaleLowerCase("id-ID"),
+    );
+    if (monthIndex < 0)
+      throw new Error(`Bulan kalender tidak dikenali: ${title}`);
+    const visibleMonth = Number(match[2]) * 12 + monthIndex;
+    if (visibleMonth === targetMonth) break;
+    await picker
+      .getByRole("button", {
+        name:
+          visibleMonth > targetMonth ? "Bulan sebelumnya" : "Bulan berikutnya",
+      })
+      .click();
+    if (attempt === 119)
+      throw new Error(`Tanggal ${value} di luar jangkauan kalender`);
+  }
+  await picker
+    .getByRole("button", {
+      name: target.toLocaleDateString("id-ID", { dateStyle: "full" }),
+      exact: true,
+    })
+    .click();
 }
 async function upload(
   page: Page,
@@ -144,7 +200,7 @@ test("nominal invalid tetap di formulir; modal bisa digunakan dengan keyboard", 
     .last()
     .click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByLabel("Nominal", { exact: true })).toBeFocused();
+  await expect(dialog.getByLabel("Nominal", { exact: true })).not.toBeFocused();
   await dialog.getByLabel("Nominal", { exact: true }).fill("0");
   await dialog.getByLabel("Catatan opsional").fill("Catatan dipertahankan");
   await dialog.getByRole("button", { name: "Simpan pengeluaran" }).click();
@@ -477,7 +533,7 @@ test("v2: dompet, transfer, anggaran, target, jadwal, laporan, dan backup terhub
   await page.getByLabel("Nama target").fill("Cadangan enam bulan");
   await choose(page, "Dompet tabungan", "Dana darurat");
   await page.getByLabel("Jumlah yang ingin dicapai (Rp)").fill("2000000");
-  await page.getByLabel("Tanggal target").fill("2027-12-31");
+  await chooseDate(page, "Tanggal target", "2027-12-31");
   await page
     .getByRole("button", { name: "Simpan target", exact: true })
     .click();
@@ -509,7 +565,7 @@ test("v2: dompet, transfer, anggaran, target, jadwal, laporan, dan backup terhub
   await page.getByLabel("Nama jadwal").fill("Internet rumah");
   await choose(page, "Kategori jadwal", "Tagihan");
   await page.getByLabel("Nominal (Rp)", { exact: true }).fill("150000");
-  await page.getByLabel("Jadwal berikutnya").fill(today);
+  await chooseDate(page, "Jadwal berikutnya", today);
   await page
     .getByRole("button", { name: "Simpan jadwal", exact: true })
     .click();

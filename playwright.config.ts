@@ -1,4 +1,7 @@
 import { defineConfig } from "@playwright/test";
+const apiPort = process.env.PLAYWRIGHT_API_PORT ?? "8788";
+const appPort = process.env.PLAYWRIGHT_APP_PORT ?? "4173";
+const appOrigin = `http://127.0.0.1:${appPort}`;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -14,12 +17,12 @@ export default defineConfig({
   webServer: [
     {
       command: "node node_modules/tsx/dist/cli.mjs server/index.ts",
-      url: "http://127.0.0.1:8788/api/health",
+      url: `http://127.0.0.1:${apiPort}/api/health`,
       env: {
-        PORT: "8788",
+        PORT: apiPort,
         PGLITE_DIR: "memory://",
         DATABASE_URL: "",
-        APP_ORIGIN: "http://127.0.0.1:4173",
+        APP_ORIGIN: appOrigin,
         NODE_ENV: "test",
       },
       reuseExistingServer: false,
@@ -27,11 +30,11 @@ export default defineConfig({
     },
     {
       command:
-        "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort",
-      url: "http://127.0.0.1:4173",
+        `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${appPort} --strictPort`,
+      url: appOrigin,
       reuseExistingServer: false,
       timeout: 30000,
-      env: { RANLEDGER_API_TARGET: "http://127.0.0.1:8788" },
+      env: { RANLEDGER_API_TARGET: `http://127.0.0.1:${apiPort}` },
     },
   ],
 });
