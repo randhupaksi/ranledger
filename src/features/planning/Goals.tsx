@@ -1,4 +1,5 @@
 import { EditorDialog } from "../../components/EditorDialog";
+import { DatePicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Plus } from "lucide-react";
@@ -68,7 +69,6 @@ function GoalEditor({
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
           placeholder="Misalnya, Dana darurat"
-          autoFocus
         />
       </div>
       <WalletPicker
@@ -85,13 +85,12 @@ function GoalEditor({
       />
       <div className="field">
         <label htmlFor="goal-date">Tanggal target</label>
-        <input
+        <DatePicker
           id="goal-date"
-          type="date"
           min="1900-01-01"
           max="9999-12-31"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={setDate}
         />
       </div>
       {goal && (

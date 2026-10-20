@@ -4,6 +4,7 @@ import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { PageHeading, Pagination, ErrorNotice } from "../../components/ui";
 import { SelectField } from "../../components/SelectField";
 import { AmountField } from "../../components/planning-ui";
+import { DatePicker } from "../../components/DatePicker";
 import { EditorDialog } from "../../components/EditorDialog";
 import { db } from "../../data/database";
 import { MonthCalendar } from "./MonthCalendar";
@@ -255,13 +256,12 @@ export default function Calendar() {
           />
           <div className="field">
             <label htmlFor="scenario-date">Tanggal skenario</label>
-            <input
+            <DatePicker
               id="scenario-date"
-              type="date"
               min={addDays(today, 1)}
               max={result.end}
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={setDate}
             />
           </div>
           <button className="button primary">Terapkan simulasi</button>

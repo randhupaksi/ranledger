@@ -18,6 +18,7 @@ import {
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice } from "../../components/ui";
 import { WalletPicker } from "../../components/planning-ui";
+import { DatePicker } from "../../components/DatePicker";
 
 function formatAmountDigits(value: string) {
   return value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -203,7 +204,6 @@ export default function TransactionDialog({
           ? "Catatan akan dihapus dan saldo langsung diperbarui. Tindakan ini tidak dapat dibatalkan."
           : "Catatan disimpan di ruang yang sedang kamu buka."
       }
-      initialFocus={deleting ? undefined : amountInput}
     >
       {deleting ? (
         <>
@@ -377,13 +377,12 @@ export default function TransactionDialog({
             </div>
             <div className="field">
               <label htmlFor="date">Tanggal</label>
-              <input
+              <DatePicker
                 id="date"
-                type="date"
                 min="1900-01-01"
                 max="9999-12-31"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={setDate}
                 disabled={busy}
                 required
               />

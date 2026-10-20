@@ -1,4 +1,5 @@
 import { EditorDialog } from "../../components/EditorDialog";
+import { DatePicker } from "../../components/DatePicker";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
@@ -102,7 +103,6 @@ function ScheduleEditor({
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
           placeholder="Misalnya, Tagihan internet"
-          autoFocus
         />
       </div>
       <div className="form-grid">
@@ -161,24 +161,24 @@ function ScheduleEditor({
       <div className="form-grid">
         <div className="field">
           <label htmlFor="schedule-date">Jadwal berikutnya</label>
-          <input
+          <DatePicker
             id="schedule-date"
-            type="date"
             min="1900-01-01"
             max="9999-12-31"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={setDate}
           />
         </div>
         <div className="field">
           <label htmlFor="schedule-end">Berakhir pada (opsional)</label>
-          <input
+          <DatePicker
             id="schedule-end"
-            type="date"
             min={date}
             max="9999-12-31"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={setEndDate}
+            clearable
+            placeholder="Tidak ada batas akhir"
           />
         </div>
       </div>

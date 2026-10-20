@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { SelectField } from "./SelectField";
+import { DatePicker } from "./DatePicker";
 import type {
   Category,
   CategoryTotal,
@@ -319,31 +320,27 @@ export function PeriodPicker({
       />
       {period === "custom" && (
         <div className="date-range">
-          <label>
-            <span className="sr-only">Dari tanggal</span>
-            <input
-              type="date"
-              min="1900-01-01"
-              max={range.end}
-              value={range.start}
-              onChange={(e) => {
-                if (e.target.value) onChange({ start: e.target.value });
-              }}
-            />
+          <label className="sr-only" htmlFor="period-start">
+            Dari tanggal
           </label>
+          <DatePicker
+            id="period-start"
+            min="1900-01-01"
+            max={range.end}
+            value={range.start}
+            onChange={(value) => onChange({ start: value })}
+          />
           <span>—</span>
-          <label>
-            <span className="sr-only">Sampai tanggal</span>
-            <input
-              type="date"
-              min={range.start}
-              max="9999-12-31"
-              value={range.end}
-              onChange={(e) => {
-                if (e.target.value) onChange({ end: e.target.value });
-              }}
-            />
+          <label className="sr-only" htmlFor="period-end">
+            Sampai tanggal
           </label>
+          <DatePicker
+            id="period-end"
+            min={range.start}
+            max="9999-12-31"
+            value={range.end}
+            onChange={(value) => onChange({ end: value })}
+          />
         </div>
       )}
     </div>

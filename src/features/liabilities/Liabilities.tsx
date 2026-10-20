@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useLedger } from "../../components/LedgerProvider";
 import { PageHeading } from "../../components/ui";
 import { EditorDialog } from "../../components/EditorDialog";
+import { DatePicker } from "../../components/DatePicker";
 import { AmountField } from "../../components/planning-ui";
 import { SelectField } from "../../components/SelectField";
 import { WalletEditor } from "../wallets/Wallets";
@@ -104,12 +105,7 @@ function TermsEditor({
       </div>
       <div className="field">
         <label htmlFor="liability-start">Mulai pembayaran</label>
-        <input
-          id="liability-start"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker id="liability-start" value={date} onChange={setDate} />
       </div>
       <div className="field">
         <label htmlFor="installment-count">Jumlah cicilan</label>
@@ -187,12 +183,7 @@ function PaymentEditor({
       <AmountField value={amount} onChange={setAmount} />
       <div className="field">
         <label htmlFor="pay-date">Tanggal pembayaran</label>
-        <input
-          id="pay-date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker id="pay-date" value={date} onChange={setDate} />
       </div>
     </EditorDialog>
   );

@@ -1,4 +1,5 @@
 import { EditorDialog } from "../../components/EditorDialog";
+import { MonthPicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { ArrowRight, Plus } from "lucide-react";
@@ -60,13 +61,12 @@ function BudgetEditor({
     >
       <div className="field">
         <label htmlFor="budget-month">Bulan anggaran</label>
-        <input
+        <MonthPicker
           id="budget-month"
-          type="month"
           min="1900-01"
           max="9999-12"
           value={selectedMonth}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={setMonth}
         />
       </div>
       <div className="field">
@@ -145,15 +145,12 @@ export default function Budgets() {
       <div className="planning-toolbar">
         <div className="field">
           <label htmlFor="view-month">Periode anggaran</label>
-          <input
+          <MonthPicker
             id="view-month"
-            type="month"
             min="1900-01"
             max="9999-12"
             value={month}
-            onChange={(e) => {
-              if (e.target.value) setParams({ month: e.target.value });
-            }}
+            onChange={(value) => setParams({ month: value })}
           />
         </div>
         <WalletPicker

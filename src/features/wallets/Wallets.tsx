@@ -1,4 +1,5 @@
 import { EditorDialog } from "../../components/EditorDialog";
+import { DatePicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { ArrowLeftRight, ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router";
@@ -70,7 +71,6 @@ export function WalletEditor({
           onChange={(e) => setName(e.target.value)}
           maxLength={60}
           placeholder="Misalnya, Rekening utama"
-          autoFocus
         />
       </div>
       <div className="field">
@@ -173,13 +173,12 @@ function TransferEditor({
       <AmountField value={amount} onChange={setAmount} />
       <div className="field">
         <label htmlFor="transfer-date">Tanggal transfer</label>
-        <input
+        <DatePicker
           id="transfer-date"
-          type="date"
           min="1900-01-01"
           max="9999-12-31"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={setDate}
         />
       </div>
       <div className="field">

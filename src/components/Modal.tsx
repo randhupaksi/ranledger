@@ -1,6 +1,11 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { X } from "lucide-react";
-import type { ReactNode, RefObject } from "react";
+import { createContext, useCallback, useState, type ReactNode } from "react";
+
+export const ModalPopoverContainerContext = createContext<HTMLElement | null>(
+  null,
+);
+
 export function Modal({
   open,
   onClose,
@@ -20,6 +25,11 @@ export function Modal({
   wide?: boolean;
   initialFocus?: RefObject<HTMLElement | null>;
 }) {
+  const [popupElement, setPopupElement] = useState<HTMLDivElement | null>(null);
+  const setPopupRef = useCallback((element: HTMLDivElement | null) => {
+    setPopupElement(element);
+  }, []);
+
   return (
     <Dialog.Root
       open={open}
@@ -31,6 +41,7 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Backdrop className="modal-backdrop" />
         <Dialog.Popup
+          ref={setPopupRef}
           className={`modal ${wide ? "modal-wide" : ""}`}
           initialFocus={initialFocus}
         >
@@ -49,7 +60,9 @@ export function Modal({
               <X size={20} />
             </Dialog.Close>
           </div>
-          {children}
+          <ModalPopoverContainerContext.Provider value={popupElement}>
+            {children}
+          </ModalPopoverContainerContext.Provider>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
