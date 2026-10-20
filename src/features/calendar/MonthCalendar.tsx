@@ -1,8 +1,57 @@
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { DayButton, DayPicker, type DayButtonProps } from "react-day-picker";
+import { id } from "date-fns/locale/id";
 import { monthLabel } from "../../domain/planning";
-import { dateLabel, localDate } from "../../domain/ledger";
+import { localDate } from "../../domain/ledger";
 import type { CalendarItem } from "../../domain/forecast";
+
+const agendaByDateContext = createContext<Map<string, CalendarItem[]>>(
+  new Map(),
+);
+
+function fromLocalDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+
+function CalendarDayButton(props: DayButtonProps) {
+  const agendaByDate = useContext(agendaByDateContext);
+  const date = localDate(props.day.date);
+  const agenda = agendaByDate.get(date) ?? [];
+  const accessibleDate = new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "full",
+  }).format(props.day.date);
+
+  return (
+    <DayButton
+      {...props}
+      aria-label={`${accessibleDate} · ${agenda.length} agenda`}
+      aria-pressed={props.modifiers.selected}
+      className={`month-calendar-day${props.className ? ` ${props.className}` : ""}`}
+    >
+      <span className="month-calendar-day-number">
+        {props.day.date.getDate()}
+      </span>
+      {agenda.length > 0 && (
+        <>
+          <small aria-hidden="true">{agenda.length} agenda</small>
+          <span className="calendar-dots" aria-hidden="true">
+            {agenda.slice(0, 4).map((item, index) => (
+              <i
+                key={`${item.id}-${index}`}
+                className={
+                  item.kind === "income" ? "income-dot" : "expense-dot"
+                }
+              />
+            ))}
+          </span>
+        </>
+      )}
+    </DayButton>
+  );
+}
+
 export function MonthCalendar({
   items,
   start,
@@ -16,107 +65,79 @@ export function MonthCalendar({
   selected: string;
   onSelect: (day: string) => void;
 }) {
-  const [month, setMonth] = useState(start.slice(0, 7));
+  const firstMonth = start.slice(0, 7);
+  const lastMonth = end.slice(0, 7);
+  const [month, setMonth] = useState(firstMonth);
   const safeMonth =
-      month >= start.slice(0, 7) && month <= end.slice(0, 7)
-        ? month
-        : start.slice(0, 7),
-    [year, number] = safeMonth.split("-").map(Number),
-    offset = (new Date(year, number - 1, 1).getDay() + 6) % 7,
-    last = new Date(year, number, 0).getDate();
-  const days = useMemo(() => {
+    month >= firstMonth && month <= lastMonth ? month : firstMonth;
+  const monthDate = fromLocalDate(`${safeMonth}-01`);
+  const agendaByDate = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();
     for (const item of items) {
-      const rows = map.get(item.date) ?? [];
-      rows.push(item);
-      map.set(item.date, rows);
+      const agenda = map.get(item.date) ?? [];
+      agenda.push(item);
+      map.set(item.date, agenda);
     }
     return map;
   }, [items]);
-  const change = (step: number) => {
-    const date = localDate(new Date(year, number - 1 + step, 1, 12)).slice(
-      0,
-      7,
+
+  const changeMonth = (step: number) => {
+    const next = new Date(
+      monthDate.getFullYear(),
+      monthDate.getMonth() + step,
+      1,
+      12,
     );
-    if (date >= start.slice(0, 7) && date <= end.slice(0, 7)) setMonth(date);
+    const nextMonth = localDate(next).slice(0, 7);
+    if (nextMonth >= firstMonth && nextMonth <= lastMonth) setMonth(nextMonth);
   };
+
   return (
-    <div className="month-calendar">
+    <section className="month-calendar" aria-label="Kalender bulanan">
       <div className="calendar-toolbar">
         <h3>{monthLabel(safeMonth)}</h3>
         <div className="v3-actions">
           <button
             className="icon-button"
             aria-label="Bulan sebelumnya"
-            disabled={safeMonth <= start.slice(0, 7)}
-            onClick={() => change(-1)}
+            disabled={safeMonth <= firstMonth}
+            onClick={() => changeMonth(-1)}
           >
             <ArrowLeft size={18} aria-hidden="true" />
           </button>
           <button
             className="icon-button"
             aria-label="Bulan berikutnya"
-            disabled={safeMonth >= end.slice(0, 7)}
-            onClick={() => change(1)}
+            disabled={safeMonth >= lastMonth}
+            onClick={() => changeMonth(1)}
           >
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
-      <table>
-        <caption className="sr-only">Agenda {monthLabel(safeMonth)}</caption>
-        <thead>
-          <tr>
-            {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => (
-              <th key={day} scope="col">
-                {day}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: Math.ceil((offset + last) / 7) }, (_, week) => (
-            <tr key={week}>
-              {Array.from({ length: 7 }, (_, weekday) => {
-                const day = week * 7 + weekday - offset + 1;
-                if (day < 1 || day > last) return <td key={weekday} />;
-                const date = `${safeMonth}-${String(day).padStart(2, "0")}`,
-                  events = days.get(date) ?? [];
-                return (
-                  <td key={weekday}>
-                    <button
-                      aria-label={`${dateLabel(date)} · ${events.length} agenda`}
-                      aria-pressed={selected === date}
-                      disabled={date < start || date > end}
-                      onClick={() => onSelect(selected === date ? "" : date)}
-                      className={date === start ? "calendar-today" : ""}
-                    >
-                      <span>{day}</span>
-                      {events.length > 0 && (
-                        <>
-                          <small>{events.length} agenda</small>
-                          <span className="calendar-dots" aria-hidden="true">
-                            {events.slice(0, 4).map((event, i) => (
-                              <i
-                                key={i}
-                                className={
-                                  event.kind === "income"
-                                    ? "income-dot"
-                                    : "expense-dot"
-                                }
-                              />
-                            ))}
-                          </span>
-                        </>
-                      )}
-                    </button>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <agendaByDateContext.Provider value={agendaByDate}>
+        <DayPicker
+          aria-label={`Agenda ${monthLabel(safeMonth)}`}
+          mode="single"
+          month={monthDate}
+          onMonthChange={(date) => setMonth(localDate(date).slice(0, 7))}
+          startMonth={fromLocalDate(`${firstMonth}-01`)}
+          endMonth={fromLocalDate(`${lastMonth}-01`)}
+          selected={selected ? fromLocalDate(selected) : undefined}
+          onSelect={(date) => onSelect(date ? localDate(date) : "")}
+          disabled={(date) => {
+            const day = localDate(date);
+            return day < start || day > end;
+          }}
+          locale={id}
+          weekStartsOn={1}
+          fixedWeeks
+          showOutsideDays={false}
+          hideNavigation
+          className="ranledger-day-picker"
+          components={{ DayButton: CalendarDayButton }}
+        />
+      </agendaByDateContext.Provider>
+    </section>
   );
 }
