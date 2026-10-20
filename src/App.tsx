@@ -296,7 +296,7 @@ function Shell() {
               {online ? (
                 <>
                   <span />
-                  {cloud.active ? cloud.status : "Lokal & privat"}
+                  {cloud.active ? cloud.status : "By Randhu"}
                 </>
               ) : (
                 <>

@@ -13,7 +13,6 @@ import { useLedger, useNotify } from "../../components/LedgerProvider";
 import {
   CategoryBreakdown,
   EmptyState,
-  PageHeading,
   PeriodPicker,
   TransactionList,
   usePeriod,
@@ -84,17 +83,72 @@ export default function Dashboard({
     summary.net > 0 ? "positive" : summary.net < 0 ? "negative" : "neutral";
   return (
     <>
-      <PageHeading
-        eyebrow="RUANG KEUANGANMU"
-        title="Keuanganmu hari ini"
-        description="Saldo, rencana, dan catatanmu dalam satu pandangan."
-        action={
-          <button className="button primary" onClick={onAdd}>
-            <Plus size={18} />
-            Catat transaksi
-          </button>
-        }
-      />
+      <section className="dashboard-hero" aria-label="Keuanganmu hari ini">
+        <div className="dashboard-hero-primary">
+          <div className="dashboard-hero-intro">
+            <div>
+              <p className="eyebrow">RUANG KEUANGANMU</p>
+              <h1>Keuanganmu hari ini</h1>
+              <p className="page-description">
+                Saldo, rencana, dan catatanmu dalam satu pandangan.
+              </p>
+            </div>
+            <div className="heading-actions">
+              <button className="button primary" onClick={onAdd}>
+                <Plus size={18} />
+                Catat transaksi
+              </button>
+            </div>
+          </div>
+          <div className="dashboard-hero-balance">
+            <div className="balance-label">
+              Saldo tercatat
+              <button
+                className="balance-visibility"
+                aria-label={
+                  hidden ? "Tampilkan nominal" : "Sembunyikan nominal"
+                }
+                onClick={() =>
+                  void db
+                    .updatePreferences({ hideAmounts: !hidden })
+                    .catch((e) => notify(errorMessage(e), true))
+                }
+              >
+                {hidden ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+            <p className="balance-amount">{money(overall.balance, hidden)}</p>
+            <p className="balance-context">Saldo gabungan seluruh dompet</p>
+            <div className="balance-foot">
+              <span className="balance-chip">
+                <span />
+                Tersimpan di perangkat ini
+              </span>
+              <span>IDR · Rupiah</span>
+            </div>
+          </div>
+        </div>
+        <aside className="dashboard-hero-rail" aria-label="Rincian saldo">
+          <p className="eyebrow">RINGKASAN SALDO</p>
+          <dl className="dashboard-hero-metrics">
+            <div>
+              <dt>Saldo awal</dt>
+              <dd>{money(overall.balance - overall.net, hidden)}</dd>
+            </div>
+            <div className="income">
+              <dt>Total pemasukan</dt>
+              <dd>{money(overall.income, hidden)}</dd>
+            </div>
+            <div className="expense">
+              <dt>Total pengeluaran</dt>
+              <dd>−{money(overall.expense, hidden)}</dd>
+            </div>
+          </dl>
+          <Link className="dashboard-hero-link" to="/dompet">
+            Kelola dompet <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </aside>
+      </section>
       <Suspense fallback={null}>
         <FinancialBriefing />
       </Suspense>
@@ -118,50 +172,6 @@ export default function Dashboard({
           </button>
         </div>
       )}
-      <section className="balance-panel" aria-label="Saldo keseluruhan">
-        <div className="balance-primary">
-          <div className="balance-label">
-            Saldo tercatat{" "}
-            <button
-              className="balance-visibility"
-              aria-label={hidden ? "Tampilkan nominal" : "Sembunyikan nominal"}
-              onClick={() =>
-                void db
-                  .updatePreferences({ hideAmounts: !hidden })
-                  .catch((e) => notify(errorMessage(e), true))
-              }
-            >
-              {hidden ? <EyeOff size={17} /> : <Eye size={17} />}
-            </button>
-          </div>
-          <p className="balance-amount">{money(overall.balance, hidden)}</p>
-          <p className="balance-context">Saldo gabungan seluruh dompet</p>
-          <div className="balance-foot">
-            <span className="balance-chip">
-              <span />
-              Tersimpan di perangkat ini
-            </span>
-            <span>IDR · Rupiah</span>
-          </div>
-        </div>
-        <div className="balance-detail">
-          <div>
-            <span>Saldo awal</span>
-            <strong>{money(overall.balance - overall.net, hidden)}</strong>
-          </div>
-          <div className="balance-income">
-            <span>Total pemasukan</span>
-            <strong>{money(overall.income, hidden)}</strong>
-          </div>
-          <div className="balance-expense">
-            <span>Total pengeluaran</span>
-            <strong>−{money(overall.expense, hidden)}</strong>
-          </div>
-          <Link to="/dompet">
-            Kelola dompet <ArrowRight size={14} aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
       <PlanningOverview />
       <div className="section-heading period-heading">
         <div>
