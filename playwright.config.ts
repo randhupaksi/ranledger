@@ -1,7 +1,9 @@
 import { defineConfig } from "@playwright/test";
+
 const apiPort = process.env.PLAYWRIGHT_API_PORT ?? "8788";
 const appPort = process.env.PLAYWRIGHT_APP_PORT ?? "4173";
 const appOrigin = `http://127.0.0.1:${appPort}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
