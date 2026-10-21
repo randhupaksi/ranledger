@@ -51,9 +51,14 @@
   accent-color: var(--brand);
   flex-shrink: 0;
 }
-.editor-fields input,
-.editor-fields textarea {
+.editor-fields .field input,
+.editor-fields .field textarea {
   width: 100%;
+}
+.wallet-delete-action {
+  justify-self: start;
+  width: max-content;
+  margin-top: 2px;
 }
 .ledger-statement {
   display: flex;

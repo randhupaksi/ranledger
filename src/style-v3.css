@@ -530,7 +530,7 @@
   gap: 28px;
   border-block: 1px solid var(--line);
   padding: 18px 0;
-  margin: 20px 0 28px;
+  margin: 20px 0 18px;
 }
 .financial-briefing > div + div {
   border-left: 1px solid var(--line);
@@ -826,15 +826,16 @@
   }
 }
 
-/* Keep the active wallet strip visually centered between the balance and planning sections. */
+/* Keep the active wallet strip close to both the briefing and planning sections. */
 .wallet-inline {
-  padding-top: 47px;
+  padding-top: 24px;
+  padding-bottom: 18px;
 }
 .wallet-inline::before {
-  top: 31px;
+  top: 5px;
 }
 @media (max-width: 760px) {
   .wallet-inline {
-    padding-top: 46px;
+    padding: 22px 0 16px;
   }
 }

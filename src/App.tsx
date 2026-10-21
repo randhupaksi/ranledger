@@ -20,6 +20,7 @@ import {
   CalendarClock,
   PieChart,
   FileUp,
+  FileQuestion,
   MoreHorizontal,
   Users,
   Landmark,
@@ -120,6 +121,26 @@ const navigation = [
   },
   { to: "/ruang", label: "Ruang & sinkronisasi", mobile: "Ruang", icon: Users },
 ];
+function NotFoundPage() {
+  return (
+    <main className="not-found-screen">
+      <section className="not-found" aria-labelledby="not-found-title">
+        <div className="not-found-icon" aria-hidden="true">
+          <FileQuestion size={38} strokeWidth={1.5} />
+        </div>
+        <p className="eyebrow">404 · HALAMAN TIDAK TERSEDIA</p>
+        <h1 id="not-found-title">Halaman tidak ditemukan</h1>
+        <p className="not-found-description">
+          Alamat ini mungkin sudah berubah. Catatan keuanganmu tetap aman.
+        </p>
+        <Link to="/" className="button primary">
+          <House size={16} />
+          Kembali ke beranda
+        </Link>
+      </section>
+    </main>
+  );
+}
 function UpdateNotice({ editing }: { editing: boolean }) {
   const [openDialog, setOpenDialog] = useState(false);
   useEffect(() => {
@@ -221,6 +242,7 @@ function Shell() {
   useEffect(() => {
     function shortcut(e: KeyboardEvent) {
       if (
+        active &&
         e.key.toLowerCase() === "n" &&
         !e.ctrlKey &&
         !e.metaKey &&
@@ -239,7 +261,8 @@ function Shell() {
     }
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
-  }, [dialog, canEdit]);
+  }, [dialog, canEdit, active]);
+  if (!active) return <NotFoundPage />;
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -390,21 +413,6 @@ function Shell() {
               <Route path="/kewajiban" element={<Liabilities />} />
               <Route path="/kalender" element={<Calendar />} />
               <Route path="/rekonsiliasi" element={<Reconciliation />} />
-              <Route
-                path="*"
-                element={
-                  <div className="not-found">
-                    <p className="eyebrow">404</p>
-                    <h1>Halaman tidak ditemukan</h1>
-                    <p>
-                      Catatanmu tetap ada. Kembali ke beranda untuk melanjutkan.
-                    </p>
-                    <Link to="/" className="button primary">
-                      Kembali ke beranda
-                    </Link>
-                  </div>
-                }
-              />
             </Routes>
           </Suspense>
         </main>

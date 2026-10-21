@@ -1629,14 +1629,29 @@ select {
   color: var(--danger);
 }
 .toast > span {
-  line-height: 1.7;
+  line-height: 1.35;
 }
 .toast > .icon-button {
   margin-left: auto;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+}
+.toast {
+  top: 24px;
+  bottom: auto;
+  gap: 9px;
+  padding: 8px 11px;
+  font-size: 13px;
 }
 .update-notice {
-  bottom: 95px;
+  top: 24px;
+  bottom: auto;
   z-index: 60;
+}
+/* Keep a transient message clear of the persistent update notice. */
+.app-shell:has(.update-notice) ~ .toast {
+  top: 124px;
 }
 .update-notice strong {
   font-size: 11px;
@@ -2135,11 +2150,40 @@ select {
 .error-panel .button {
   margin-top: 10px;
 }
-.not-found {
-  padding: 100px 0;
+.not-found-screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px;
+  background: var(--paper);
 }
-.not-found > p:not(.eyebrow) {
-  margin: 20px 0;
+.not-found {
+  display: flex;
+  width: min(100%, 560px);
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 0;
+  text-align: center;
+}
+.not-found-icon {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  margin-bottom: 25px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--brand);
+}
+.not-found .eyebrow {
+  margin-bottom: 12px;
+}
+.not-found h1 {
+  text-wrap: balance;
+}
+.not-found-description {
+  margin: 15px 0 25px;
   color: var(--muted);
 }
 @keyframes fade-in {
@@ -2809,15 +2853,25 @@ select {
   .toast,
   .update-notice {
     right: 16px;
-    bottom: 91px;
     max-width: calc(100% - 32px);
     font-size: 11px;
     border-radius: 8px;
     padding: 11px 12px;
   }
-  .update-notice {
-    bottom: 169px;
+  .toast {
+    top: max(16px, env(safe-area-inset-top));
+    bottom: auto;
     gap: 8px;
+    padding: 6px 9px;
+    font-size: 13px;
+  }
+  .update-notice {
+    top: max(16px, env(safe-area-inset-top));
+    bottom: auto;
+    gap: 8px;
+  }
+  .app-shell:has(.update-notice) ~ .toast {
+    top: calc(max(16px, env(safe-area-inset-top)) + 100px);
   }
   .update-notice p {
     font-size: 9px;

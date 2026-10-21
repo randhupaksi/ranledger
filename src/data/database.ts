@@ -433,6 +433,46 @@ export class LedgerDatabase extends Dexie {
       await this.bump();
     });
   }
+  async removeWallet(wallet: Wallet, expectedRevision: number) {
+    const { validateLedger } = await import("../domain/validation");
+    await this.transaction("rw", this.tables, async () => {
+      const current = await this.snapshot();
+      const old = current.wallets.find((row) => row.id === wallet.id);
+      this.checkEdit(old, wallet, true);
+      if (current.revision !== expectedRevision)
+        throw new Error(
+          "Data berubah di tab lain. Tutup konfirmasi dan periksa ulang sebelum menghapus dompet.",
+        );
+      if (!current.wallets.some((row) => row.id !== wallet.id && !row.archived))
+        throw new Error(
+          "Dompet aktif terakhir tidak dapat dihapus. Buat atau aktifkan dompet lain terlebih dahulu.",
+        );
+      const used =
+        current.transactions.some((row) => row.walletId === wallet.id) ||
+        current.transfers.some(
+          (row) =>
+            row.sourceWalletId === wallet.id ||
+            row.targetWalletId === wallet.id,
+        ) ||
+        current.budgets.some((row) => row.walletId === wallet.id) ||
+        current.schedules.some((row) => row.walletId === wallet.id) ||
+        current.goals.some((row) => row.walletId === wallet.id) ||
+        current.liabilities.some(
+          (row) =>
+            row.walletId === wallet.id || row.paymentWalletId === wallet.id,
+        );
+      if (used)
+        throw new Error(
+          "Dompet masih dipakai oleh transaksi atau fitur lain. Pindahkan atau hapus data terkait terlebih dahulu, atau arsipkan dompet.",
+        );
+      validateLedger({
+        ...current,
+        wallets: current.wallets.filter((row) => row.id !== wallet.id),
+      });
+      await this.wallets.delete(wallet.id);
+      await this.bump();
+    });
+  }
   async removeEntity<K extends Exclude<keyof PlanningEntities, "wallets">>(
     name: K,
     entity: PlanningEntities[K],

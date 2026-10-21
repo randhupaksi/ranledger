@@ -1,15 +1,22 @@
 import { EditorDialog } from "../../components/EditorDialog";
+import { Modal } from "../../components/Modal";
 import { DatePicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { Archive, ArrowLeftRight, ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router";
-import { useLedger } from "../../components/LedgerProvider";
-import { EmptyState, PageHeading, Pagination } from "../../components/ui";
+import { useLedger, useNotify } from "../../components/LedgerProvider";
+import {
+  EmptyState,
+  ErrorNotice,
+  PageHeading,
+  Pagination,
+} from "../../components/ui";
 import { AmountField, WalletPicker } from "../../components/planning-ui";
 import { SelectField } from "../../components/SelectField";
 import { db } from "../../data/database";
 import {
   dateLabel,
+  errorMessage,
   localDate,
   money,
   parseAmount,
@@ -28,6 +35,8 @@ export function WalletEditor({
   onClose: () => void;
   defaultType?: WalletType;
 }) {
+  const ledger = useLedger();
+  const notify = useNotify();
   const [id] = useState(() => wallet?.id ?? crypto.randomUUID());
   const [name, setName] = useState(wallet?.name ?? "");
   const [type, setType] = useState<WalletType>(wallet?.type ?? defaultType);
@@ -40,75 +49,207 @@ export function WalletEditor({
       : "0",
   );
   const [archived, setArchived] = useState(wallet?.archived ?? false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleteRevision, setDeleteRevision] = useState<number | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const walletInUse = Boolean(
+    wallet &&
+    (ledger.transactions.some((row) => row.walletId === wallet.id) ||
+      ledger.transfers.some(
+        (row) =>
+          row.sourceWalletId === wallet.id || row.targetWalletId === wallet.id,
+      ) ||
+      ledger.budgets.some((row) => row.walletId === wallet.id) ||
+      ledger.schedules.some((row) => row.walletId === wallet.id) ||
+      ledger.goals.some((row) => row.walletId === wallet.id) ||
+      ledger.liabilities.some(
+        (row) =>
+          row.walletId === wallet.id || row.paymentWalletId === wallet.id,
+      )),
+  );
+  const isLastActiveWallet = Boolean(
+    wallet &&
+    !wallet.archived &&
+    !ledger.wallets.some((row) => row.id !== wallet.id && !row.archived),
+  );
+  const ledgerChanged =
+    deleteRevision !== null && deleteRevision !== ledger.revision;
+
+  async function removeWallet() {
+    if (
+      !wallet ||
+      deleteBusy ||
+      deleteText !== "HAPUS" ||
+      deleteRevision === null ||
+      walletInUse ||
+      isLastActiveWallet ||
+      ledgerChanged
+    )
+      return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      await db.removeWallet(wallet, deleteRevision);
+      setDeleteOpen(false);
+      notify(`Dompet ${wallet.name} dihapus.`);
+      onClose();
+    } catch (error) {
+      setDeleteError(errorMessage(error));
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
   return (
-    <EditorDialog
-      title={wallet ? "Ubah dompet" : "Tambah dompet"}
-      description="Saldo awal adalah uang yang sudah ada sebelum transaksi pertama dompet ini."
-      onClose={onClose}
-      saveLabel="Simpan dompet"
-      onSave={() =>
-        db.saveEntity(
-          "wallets",
-          {
-            id,
-            name: name.trim(),
-            type,
-            openingBalance: isLiability({ type })
-              ? -Math.abs(parseAmount(amount, true))
-              : parseAmount(amount, true),
-            archived,
-            updatedAt: wallet?.updatedAt ?? new Date().toISOString(),
-          },
-          Boolean(wallet),
-        )
-      }
-    >
-      <div className="field">
-        <label htmlFor="wallet-name">Nama dompet</label>
-        <input
-          id="wallet-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={60}
-          placeholder="Misalnya, Rekening utama"
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="wallet-type">Jenis dompet</label>
-        <SelectField
-          id="wallet-type"
-          value={type}
-          onValueChange={(v) => setType(v as WalletType)}
-          options={Object.entries(walletTypes).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-        />
-      </div>
-      <AmountField
-        label={
-          isLiability({ type }) ? "Utang awal (Rp)" : "Saldo awal dompet (Rp)"
+    <>
+      <EditorDialog
+        title={wallet ? "Ubah dompet" : "Tambah dompet"}
+        description="Saldo awal adalah uang yang sudah ada sebelum transaksi pertama dompet ini."
+        onClose={onClose}
+        saveLabel="Simpan dompet"
+        onSave={() =>
+          db.saveEntity(
+            "wallets",
+            {
+              id,
+              name: name.trim(),
+              type,
+              openingBalance: isLiability({ type })
+                ? -Math.abs(parseAmount(amount, true))
+                : parseAmount(amount, true),
+              archived,
+              updatedAt: wallet?.updatedAt ?? new Date().toISOString(),
+            },
+            Boolean(wallet),
+          )
         }
-        value={amount}
-        onChange={setAmount}
-        negative
-      />
-      <p className="field-hint">
-        {isLiability({ type })
-          ? "Masukkan sisa utang sebagai angka positif. Pembelian dicatat sebagai pengeluaran dari akun ini; pembayaran memakai transfer dari akun aset."
-          : "Bisa negatif. Mengubah saldo awal memperbarui saldo dompet tanpa membuat pemasukan baru."}
-      </p>
-      {wallet && (
-        <label className="check-line">
+      >
+        <div className="field">
+          <label htmlFor="wallet-name">Nama dompet</label>
           <input
-            type="checkbox"
-            checked={archived}
-            onChange={(e) => setArchived(e.target.checked)}
+            id="wallet-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={60}
+            placeholder="Misalnya, Rekening utama"
           />
-          Arsipkan dompet dari input baru
-        </label>
+        </div>
+        <div className="field">
+          <label htmlFor="wallet-type">Jenis dompet</label>
+          <SelectField
+            id="wallet-type"
+            value={type}
+            onValueChange={(v) => setType(v as WalletType)}
+            options={Object.entries(walletTypes).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
+        </div>
+        <AmountField
+          label={
+            isLiability({ type }) ? "Utang awal (Rp)" : "Saldo awal dompet (Rp)"
+          }
+          value={amount}
+          onChange={setAmount}
+          negative
+        />
+        <p className="field-hint">
+          {isLiability({ type })
+            ? "Masukkan sisa utang sebagai angka positif. Pembelian dicatat sebagai pengeluaran dari akun ini; pembayaran memakai transfer dari akun aset."
+            : "Bisa negatif. Mengubah saldo awal memperbarui saldo dompet tanpa membuat pemasukan baru."}
+        </p>
+        {wallet && (
+          <>
+            <label className="check-line">
+              <input
+                type="checkbox"
+                checked={archived}
+                onChange={(e) => setArchived(e.target.checked)}
+              />
+              Arsipkan dompet dari input baru
+            </label>
+            <button
+              type="button"
+              className="button text-danger small-button wallet-delete-action"
+              onClick={() => {
+                setDeleteText("");
+                setDeleteError("");
+                setDeleteRevision(ledger.revision);
+                setDeleteOpen(true);
+              }}
+            >
+              Hapus dompet
+            </button>
+          </>
+        )}
+      </EditorDialog>
+      {wallet && (
+        <Modal
+          open={deleteOpen}
+          onClose={() => {
+            if (!deleteBusy) setDeleteOpen(false);
+          }}
+          busy={deleteBusy}
+          title="Hapus dompet?"
+          description={`Dompet “${wallet.name}” dan saldo awalnya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+        >
+          <div className="notice notice-warning">
+            {walletInUse
+              ? "Dompet ini masih dipakai oleh transaksi atau fitur lain. Pindahkan atau hapus data terkait terlebih dahulu, atau arsipkan dompet."
+              : isLastActiveWallet
+                ? "Dompet aktif terakhir tidak dapat dihapus. Buat atau aktifkan dompet lain terlebih dahulu."
+                : "Pastikan kamu sudah menyimpan backup jika ingin menyimpan data ini."}
+          </div>
+          {!walletInUse && !isLastActiveWallet && (
+            <div className="field">
+              <label htmlFor="wallet-delete-confirm">
+                Ketik HAPUS untuk mengonfirmasi
+              </label>
+              <input
+                id="wallet-delete-confirm"
+                value={deleteText}
+                onChange={(event) => setDeleteText(event.target.value)}
+                placeholder="HAPUS"
+                autoComplete="off"
+                disabled={deleteBusy}
+              />
+            </div>
+          )}
+          {deleteError && <ErrorNotice>{deleteError}</ErrorNotice>}
+          {ledgerChanged && (
+            <ErrorNotice>
+              Data berubah di tab lain. Tutup konfirmasi dan periksa ulang
+              sebelum menghapus dompet.
+            </ErrorNotice>
+          )}
+          <div className="modal-footer">
+            <button
+              className="button secondary"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleteBusy}
+            >
+              Batal
+            </button>
+            <button
+              className="button danger"
+              disabled={
+                deleteText !== "HAPUS" ||
+                deleteBusy ||
+                walletInUse ||
+                isLastActiveWallet ||
+                ledgerChanged
+              }
+              onClick={() => void removeWallet()}
+            >
+              {deleteBusy ? "Menghapus…" : "Hapus dompet"}
+            </button>
+          </div>
+        </Modal>
       )}
-    </EditorDialog>
+    </>
   );
 }
 function TransferEditor({
