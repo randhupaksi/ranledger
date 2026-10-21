@@ -108,17 +108,17 @@ export default function Reconciliation() {
   return (
     <>
       <PageHeading
-        eyebrow="CATATAN YANG BISA DITELUSURI"
-        title="Rekonsiliasi & aturan"
-        description="Lihat asal transaksi, batalkan batch yang belum berubah, dan atur kategori untuk laporan berikutnya."
+        eyebrow="LANJUTAN ALUR IMPOR"
+        title="Riwayat impor & aturan"
+        description="Tinjau transaksi dari CSV, batalkan batch yang belum berubah, dan atur kategori untuk impor berikutnya."
         action={
           <Link to="/impor" className="button primary">
-            Impor laporan CSV
+            Impor transaksi CSV
           </Link>
         }
       />
       <section className="v3-section">
-        <h2>Riwayat impor</h2>
+        <h2>Batch impor</h2>
         <p className="field-hint">
           Membatalkan batch menghapus transaksi yang dibuat batch itu. Transaksi
           yang hanya dicocokkan tetap tersimpan. Pembatalan ditolak jika salah

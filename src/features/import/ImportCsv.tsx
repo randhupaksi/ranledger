@@ -246,7 +246,7 @@ export default function ImportCsv() {
       />
       <div className="v3-actions import-links">
         <Link className="text-link" to="/rekonsiliasi">
-          Riwayat impor & aturan kategori
+          Buka riwayat impor & aturan kategori
         </Link>
         {data && (
           <>

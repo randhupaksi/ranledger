@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Archive,
   ArchiveRestore,
-  ArrowRight,
   Check,
   HardDrive,
   Monitor,
@@ -18,7 +17,7 @@ import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { SelectField } from "../../components/SelectField";
 import { ErrorNotice, PageHeading } from "../../components/ui";
 import { db } from "../../data/database";
-import { errorMessage, parseAmount } from "../../domain/ledger";
+import { errorMessage } from "../../domain/ledger";
 import type { Category, Theme, TransactionKind } from "../../domain/ledger";
 
 function CategoryDialog({
@@ -130,13 +129,6 @@ function CategoryDialog({
 export default function Settings() {
   const ledger = useLedger();
   const notify = useNotify();
-  const balanceWallet =
-    ledger.wallets.find((w) => w.id === "main-wallet") ?? ledger.wallets[0];
-  const [openingBalance, setOpeningBalance] = useState(
-    balanceWallet.openingBalance.toLocaleString("id-ID"),
-  );
-  const [balanceError, setBalanceError] = useState("");
-  const [savingBalance, setSavingBalance] = useState(false);
   const [categoryDialog, setCategoryDialog] = useState<Category | "new" | null>(
     null,
   );
@@ -152,9 +144,6 @@ export default function Settings() {
     quota?: number;
     persistent?: boolean;
   } | null>(null);
-  useEffect(() => {
-    setOpeningBalance(balanceWallet.openingBalance.toLocaleString("id-ID"));
-  }, [balanceWallet.openingBalance]);
   useEffect(() => {
     async function inspect() {
       try {
@@ -173,27 +162,6 @@ export default function Settings() {
       notify("Tema diperbarui.");
     } catch (e) {
       notify(errorMessage(e), true);
-    }
-  }
-  async function saveBalance(e: FormEvent) {
-    e.preventDefault();
-    if (savingBalance) return;
-    setSavingBalance(true);
-    setBalanceError("");
-    try {
-      await db.saveEntity(
-        "wallets",
-        {
-          ...balanceWallet,
-          openingBalance: parseAmount(openingBalance, true),
-        },
-        true,
-      );
-      notify("Saldo awal tersimpan. Pemasukan periode tidak berubah.");
-    } catch (e) {
-      setBalanceError(errorMessage(e));
-    } finally {
-      setSavingBalance(false);
     }
   }
   async function archive(category: Category) {
@@ -332,46 +300,18 @@ export default function Settings() {
         </section>
         <section className="settings-section">
           <div className="settings-description">
-            <h2>Saldo awal {balanceWallet.name}</h2>
-            <p>
-              Saldo awal sekarang dikelola per dompet.{" "}
-              <Link to="/dompet" className="text-link">
-                Kelola semua dompet <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </p>
+            <h2>Saldo awal</h2>
+            <p>Atur saldo sebelum transaksi dari dompet yang bersangkutan.</p>
           </div>
-          <form
-            className="surface settings-content"
-            onSubmit={(e) => void saveBalance(e)}
-          >
-            <div className="field">
-              <label htmlFor="opening-balance">
-                Saldo sebelum transaksi pertama (Rp)
-              </label>
-              <input
-                id="opening-balance"
-                inputMode="text"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(e.target.value)}
-                placeholder="Misalnya, 50.000 atau -50.000"
-                disabled={savingBalance}
-                aria-invalid={Boolean(balanceError)}
-                aria-describedby="opening-help"
-              />
-              <p className="field-hint" id="opening-help">
-                Dihitung ke saldo keseluruhan, terpisah dari pemasukan bulanan.
-                Bisa negatif, misalnya −50.000 ditulis -50000.
-              </p>
-            </div>
-            {balanceError && <ErrorNotice>{balanceError}</ErrorNotice>}
-            <button
-              className="button secondary"
-              disabled={savingBalance}
-              type="submit"
-            >
-              {savingBalance ? "Menyimpan…" : "Simpan saldo awal"}
-            </button>
-          </form>
+          <div className="surface settings-content">
+            <p className="muted">
+              Saldo awal dikelola langsung di Dompet agar pengaturan setiap akun
+              tetap berada di satu tempat.
+            </p>
+            <Link to="/dompet" className="button secondary">
+              Kelola saldo awal di Dompet
+            </Link>
+          </div>
         </section>
         <section className="settings-section" id="categories">
           <div className="settings-description">

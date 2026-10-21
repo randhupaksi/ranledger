@@ -93,18 +93,17 @@ const navigation = [
     icon: Landmark,
   },
   { to: "/anggaran", label: "Anggaran", mobile: "Anggaran", icon: PieChart },
-  { to: "/rencana", label: "Rencana", mobile: "Rencana", icon: CalendarClock },
+  {
+    to: "/rencana",
+    label: "Jadwal & target",
+    mobile: "Rencana",
+    icon: CalendarClock,
+  },
   {
     to: "/kalender",
     label: "Kalender & proyeksi",
     mobile: "Kalender",
     icon: CalendarDays,
-  },
-  {
-    to: "/rekonsiliasi",
-    label: "Rekonsiliasi",
-    mobile: "Rekonsiliasi",
-    icon: FileUp,
   },
   { to: "/impor", label: "Impor CSV", mobile: "Impor", icon: FileUp },
   {
@@ -191,6 +190,7 @@ function Shell() {
   const active = navigation.find(
     (n) =>
       n.to === location.pathname ||
+      (n.to === "/impor" && location.pathname === "/rekonsiliasi") ||
       (n.to === "/rencana" && location.pathname.startsWith("/rencana/")),
   );
   useEffect(() => {
@@ -256,7 +256,7 @@ function Shell() {
               to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
+                `nav-item ${isActive || (to === "/impor" && location.pathname === "/rekonsiliasi") ? "active" : ""}`
               }
             >
               <Icon size={19} strokeWidth={1.8} />
