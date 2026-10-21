@@ -17,6 +17,7 @@
     "lint": "oxlint src server api e2e scripts vite.config.ts vitest.config.ts playwright.config.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run format:check && npm run test && npm run build && npm run test:e2e",
     "format": "prettier --write src server api e2e scripts *.ts *.json index.html public/icon.svg",
     "format:check": "prettier --check src server api e2e scripts *.ts *.json index.html public/icon.svg"
   },

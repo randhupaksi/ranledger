@@ -1032,8 +1032,9 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
     await reader
       .getByRole("button", { name: "Sinkronkan sekarang", exact: true })
       .click();
-    await expect(reader.locator(".connection-state")).toContainText(
-      "By Randhu",
+    await expect(reader.locator(".connection-state")).toHaveAttribute(
+      "data-connection-mode",
+      "local",
       { timeout: 15000 },
     );
   } finally {

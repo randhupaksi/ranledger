@@ -292,7 +292,12 @@ function Shell() {
             <Logo />
           </Link>
           <div className="topbar-right">
-            <span className={`connection-state ${online ? "" : "offline"}`}>
+            <span
+              className={`connection-state ${online ? "" : "offline"}`}
+              data-connection-mode={
+                online ? (cloud.active ? "shared" : "local") : "offline"
+              }
+            >
               {online ? (
                 <>
                   <span />

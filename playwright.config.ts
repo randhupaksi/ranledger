@@ -31,8 +31,7 @@ export default defineConfig({
       timeout: 45000,
     },
     {
-      command:
-        `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${appPort} --strictPort`,
+      command: `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port ${appPort} --strictPort`,
       url: appOrigin,
       reuseExistingServer: false,
       timeout: 30000,
