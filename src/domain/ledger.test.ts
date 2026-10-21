@@ -30,8 +30,8 @@ function tx(
     updatedAt: at,
   };
 }
-describe("perhitungan keuangan", () => {
-  it("memisahkan saldo awal dari pemasukan periode dan memperbarui setelah edit/hapus", () => {
+describe("financial calculations", () => {
+  it("separates opening balances from period income and updates totals after edits or deletions", () => {
     const transactions = [
       tx("a", 2_500_000, "income"),
       tx("b", 35_000, "expense"),
@@ -77,26 +77,26 @@ describe("perhitungan keuangan", () => {
     "",
     "1000000000001",
     "NaN",
-  ])("menolak nominal tidak valid: %s", (value) => {
+  ])("rejects invalid amounts: %s", (value) => {
     expect(() => parseAmount(value)).toThrow();
   });
-  it("memahami pemisah ribuan tanpa pembulatan dan mendukung saldo awal negatif", () => {
+  it("parses thousands separators without rounding and supports negative opening balances", () => {
     expect(parseAmount("25.000")).toBe(25000);
     expect(parseAmount("-50.000", true)).toBe(-50000);
     expect(parseAmount("0", true)).toBe(0);
   });
-  it("menolak total yang melebihi integer aman", () => {
+  it("rejects totals above the safe integer limit", () => {
     expect(() => safeSum([Number.MAX_SAFE_INTEGER, 1])).toThrow();
   });
 });
-describe("tanggal dan pencarian", () => {
-  it("memvalidasi kalender termasuk tahun kabisat", () => {
+describe("dates and search", () => {
+  it("validates calendar dates, including leap years", () => {
     expect(validDate("2024-02-29")).toBe(true);
     expect(validDate("2026-02-29")).toBe(false);
     expect(validDate("2026-13-01")).toBe(false);
     expect(validDate("2026-1-1")).toBe(false);
   });
-  it("minggu dimulai Senin, lintas bulan dan tahun tetap konsisten", () => {
+  it("weeks start on Monday and remain consistent across months and years", () => {
     expect(dateRange("week", undefined, new Date(2026, 0, 1, 0, 5))).toEqual({
       start: "2025-12-29",
       end: "2026-01-01",
@@ -105,7 +105,7 @@ describe("tanggal dan pencarian", () => {
       dateRange("month", undefined, new Date(2026, 9, 17, 23, 50)),
     ).toEqual({ start: "2026-10-01", end: "2026-10-17" });
   });
-  it("mencari teks/kategori, menggabungkan filter, dan memakai urutan stabil", () => {
+  it("searches text and categories, combines filters, and uses a stable sort order", () => {
     const ledger = emptyLedger();
     const rows = [
       tx("b", 10_000, "expense"),
@@ -127,7 +127,7 @@ describe("tanggal dan pencarian", () => {
       ),
     ).toBe(totals(found).expense);
   });
-  it("menolak kategori hilang, jenis tidak cocok, dan ID ganda", () => {
+  it("rejects missing categories, mismatched types, and duplicate IDs", () => {
     const ledger = emptyLedger();
     ledger.transactions = [tx("a", 1000, "income")];
     expect(() => validateLedger({ ...ledger, categories: [] })).toThrow(

@@ -98,12 +98,12 @@ async function chooseDate(
     const title = await picker.locator(".date-picker-toolbar h3").innerText();
     const match = title.match(/^(\D+)\s+(\d{4})$/);
     if (!match)
-      throw new Error(`Judul bulan kalender tidak dikenali: ${title}`);
+      throw new Error(`Calendar month heading is not recognized: ${title}`);
     const monthIndex = monthNames.indexOf(
       match[1].trim().toLocaleLowerCase("id-ID"),
     );
     if (monthIndex < 0)
-      throw new Error(`Bulan kalender tidak dikenali: ${title}`);
+      throw new Error(`Unrecognized calendar month: ${title}`);
     const visibleMonth = Number(match[2]) * 12 + monthIndex;
     if (visibleMonth === targetMonth) break;
     await picker
@@ -113,7 +113,7 @@ async function chooseDate(
       })
       .click();
     if (attempt === 119)
-      throw new Error(`Tanggal ${value} di luar jangkauan kalender`);
+      throw new Error(`Date ${value} is outside the supported calendar range`);
   }
   await picker
     .getByRole("button", {
@@ -149,7 +149,7 @@ async function expectStatusMessage(page: Page, message: string) {
   ).toContainText(message);
 }
 
-test("pencatatan tanpa akun, saldo awal, edit, hapus, filter, dan persistensi", async ({
+test("guest entry: opening balance, edits, deletion, filtering, and persistence", async ({
   ledgerPage: page,
 }) => {
   await expect(
@@ -185,7 +185,7 @@ test("pencatatan tanpa akun, saldo awal, edit, hapus, filter, dan persistensi", 
   await expect(page.locator(".balance-amount")).toContainText("2.960.000");
 });
 
-test("nominal invalid tetap di formulir; modal bisa digunakan dengan keyboard", async ({
+test("invalid amounts stay in the form; dialogs remain keyboard accessible", async ({
   ledgerPage: page,
 }) => {
   const skipLink = page.locator(".skip-link");
@@ -217,7 +217,7 @@ test("nominal invalid tetap di formulir; modal bisa digunakan dengan keyboard", 
   await expect(dialog).not.toBeVisible();
 });
 
-test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", async ({
+test("JSON/Excel backup, full restore, idempotent merge, and safe handling of corrupt files", async ({
   ledgerPage: page,
 }) => {
   await page.goto(`${origin}/backup`);
@@ -261,7 +261,7 @@ test("backup JSON/Excel, pemulihan utuh, merge idempoten, file rusak aman", asyn
   await expect(page.locator(".balance-amount")).toContainText("2.915.000");
 });
 
-test("kategori dapat dibuat, diganti, diarsipkan, dan diaktifkan", async ({
+test("categories can be created, renamed, archived, and reactivated", async ({
   ledgerPage: page,
 }) => {
   await page.goto(`${origin}/pengaturan`);
@@ -288,7 +288,7 @@ test("kategori dapat dibuat, diganti, diarsipkan, dan diaktifkan", async ({
   await expect(page.getByText("Kopi & teh", { exact: true })).toBeVisible();
 });
 
-test("desktop/mobile, gelap/terang, laporan drilldown, dan tangkapan layar", async ({
+test("desktop/mobile layouts, light/dark themes, report drilldown, and screenshots", async ({
   ledgerPage: page,
 }) => {
   await mkdir(path.join(process.cwd(), ".cache", "screenshots"), {
@@ -369,7 +369,7 @@ test("desktop/mobile, gelap/terang, laporan drilldown, dan tangkapan layar", asy
   ).toBe(true);
 });
 
-test("offline: reload, input, laporan, dan backup bekerja tanpa permintaan pihak ketiga", async ({
+test("offline: reload, entry, reports, and backups work without third-party requests", async ({
   ledgerPage: page,
   ledgerContext: context,
 }) => {
@@ -402,7 +402,7 @@ test("offline: reload, input, laporan, dan backup bekerja tanpa permintaan pihak
   await context.setOffline(false);
 });
 
-test("riwayat ribuan transaksi tetap terfilter dan hanya 30 baris ditampilkan", async ({
+test("thousands of transactions remain filterable while only 30 rows are rendered", async ({
   ledgerPage: page,
 }) => {
   const backup = exampleBackup();
@@ -431,7 +431,7 @@ test("riwayat ribuan transaksi tetap terfilter dan hanya 30 baris ditampilkan", 
   await expect(page.locator(".pagination")).toContainText("5.000 transaksi");
 });
 
-base("catatan bertahan setelah browser ditutup dan dibuka ulang", async () => {
+base("notes persist after closing and reopening the browser", async () => {
   const root = path.resolve(process.cwd(), ".cache", "browser");
   const profile = path.join(root, `restart-${crypto.randomUUID()}`);
   let context = await chromium.launchPersistentContext(profile, {
@@ -463,7 +463,7 @@ async function choose(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
-test("v2: dompet, transfer, anggaran, target, jadwal, laporan, dan backup terhubung", async ({
+test("v2: wallets, transfers, budgets, goals, schedules, reports, and backups work together", async ({
   ledgerPage: page,
 }) => {
   await mkdir(path.join(process.cwd(), ".cache", "screenshots"), {
@@ -637,7 +637,7 @@ test("v2: dompet, transfer, anggaran, target, jadwal, laporan, dan backup terhub
     .click();
   await expect(page).toHaveURL(/dompet/);
 });
-test("v2: CSV offline dengan pratinjau, duplikat, baris invalid, dan konfirmasi atomik", async ({
+test("v2: offline CSV import with preview, duplicates, invalid rows, and atomic confirmation", async ({
   ledgerPage: page,
   ledgerContext: context,
 }) => {
@@ -685,7 +685,7 @@ test("v2: CSV offline dengan pratinjau, duplikat, baris invalid, dan konfirmasi 
   await context.setOffline(false);
 });
 
-test("v3: kredit, pembayaran, refund, kalender, simulasi, dan backup terenkripsi", async ({
+test("v3: credit, payments, refunds, calendar, forecasting, and encrypted backups", async ({
   ledgerPage: page,
 }) => {
   test.setTimeout(90000);
@@ -871,7 +871,7 @@ async function manualSync(page: Page) {
     .click();
   await expectSynced(page);
 }
-test("v3: dua perangkat, offline queue, konflik, dan ledger lokal terpisah", async ({
+test("v3: two devices, offline queue, conflicts, and separate local ledgers", async ({
   ledgerPage: page,
 }) => {
   test.setTimeout(150000);
@@ -987,7 +987,7 @@ test("v3: dua perangkat, offline queue, konflik, dan ledger lokal terpisah", asy
   }
 });
 
-test("v3: undangan ruang bersama dan hak pembaca", async ({
+test("v3: shared-space invitations and reader permissions", async ({
   ledgerPage: page,
 }) => {
   test.setTimeout(90000);
@@ -1042,7 +1042,7 @@ test("v3: undangan ruang bersama dan hak pembaca", async ({
   }
 });
 
-test("v3: aturan kategori, pencocokan laporan, dan undo batch", async ({
+test("v3: category rules, report matching, and batch undo", async ({
   ledgerPage: page,
 }) => {
   await add(page, "25000", "Kopi tercatat", false, "2026-01-05");

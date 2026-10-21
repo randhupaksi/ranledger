@@ -14,8 +14,8 @@ afterEach(async () => {
   await database.delete();
   vi.restoreAllMocks();
 });
-describe("penyimpanan dan transaksi atomik", () => {
-  it("menyimpan, membuka ulang, mengubah dan menghapus dengan saldo tepat", async () => {
+describe("storage and atomic transactions", () => {
+  it("saves, reopens, edits, and deletes records while keeping balances accurate", async () => {
     const tx = exampleBackup().transactions[0];
     await database.saveTransaction(tx, false);
     database.close();
@@ -28,13 +28,13 @@ describe("penyimpanan dan transaksi atomik", () => {
     await database.removeTransaction(saved);
     expect((await database.snapshot()).transactions).toHaveLength(0);
   });
-  it("mencegah klik ganda memakai ID yang sama", async () => {
+  it("prevents duplicate submissions that reuse the same ID", async () => {
     const t = exampleBackup().transactions[0];
     await database.saveTransaction(t, false);
     await expect(database.saveTransaction(t, false)).rejects.toThrow();
     expect((await database.snapshot()).transactions).toHaveLength(1);
   });
-  it("kategori arsip/rename menjaga riwayat dan referensinya", async () => {
+  it("archiving or renaming a category preserves its history and references", async () => {
     const t = exampleBackup().transactions[1];
     await database.saveTransaction(t, false);
     const c = (await database.snapshot()).categories.find(
@@ -48,7 +48,7 @@ describe("penyimpanan dan transaksi atomik", () => {
       name: "Makan harian",
     });
   });
-  it("backup → reset → impor mengembalikan seluruh data dan memeriksa hasil", async () => {
+  it("backup → reset → import restores all data and verifies the result", async () => {
     await database.restore(exampleBackup(), "replace", 0);
     const before = await database.snapshot();
     const backup = createBackup(before);
@@ -61,7 +61,7 @@ describe("penyimpanan dan transaksi atomik", () => {
     expect(restored.categories).toEqual(before.categories);
     expect(restored.preferences).toEqual(before.preferences);
   });
-  it("file rusak tidak menyentuh data sehat", async () => {
+  it("corrupt files do not modify healthy data", async () => {
     await database.saveTransaction(exampleBackup().transactions[0], false);
     const before = await database.snapshot();
     const invalid = exampleBackup();
@@ -71,7 +71,7 @@ describe("penyimpanan dan transaksi atomik", () => {
     ).rejects.toThrow();
     expect(await database.snapshot()).toEqual(before);
   });
-  it("kegagalan di tengah impor membatalkan clear dan seluruh penulisan", async () => {
+  it("a mid-import failure rolls back the clear and all writes", async () => {
     await database.saveTransaction(exampleBackup().transactions[0], false);
     const before = await database.snapshot();
     vi.spyOn(database.categories, "bulkAdd").mockRejectedValueOnce(
@@ -82,7 +82,7 @@ describe("penyimpanan dan transaksi atomik", () => {
     ).rejects.toThrow(/storage penuh/);
     expect(await database.snapshot()).toEqual(before);
   });
-  it("menolak pratinjau basi dan edit dari tab lain", async () => {
+  it("rejects stale previews and edits from another tab", async () => {
     await database.saveTransaction(exampleBackup().transactions[0], false);
     const before = await database.snapshot();
     const old = before.transactions[0];
@@ -98,7 +98,7 @@ describe("penyimpanan dan transaksi atomik", () => {
     ).rejects.toThrow(/berubah/);
     await expect(database.removeTransaction(old)).rejects.toThrow(/berubah/);
   });
-  it("hasil verifikasi yang berbeda membatalkan seluruh pemulihan", async () => {
+  it("a mismatched verification result rolls back the entire restore", async () => {
     await database.saveTransaction(exampleBackup().transactions[0], false);
     const before = await database.snapshot();
     vi.spyOn(database, "snapshot")

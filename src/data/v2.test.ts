@@ -118,8 +118,8 @@ function sample(): Ledger {
   ];
   return ledger;
 }
-describe("migrasi dan backup Ranledger 2", () => {
-  it("memigrasikan database v1 tanpa mengubah transaksi, saldo, kategori, atau preferensi", async () => {
+describe("Ranledger 2 migrations and backups", () => {
+  it("migrates the v1 database without changing transactions, balances, categories, or preferences", async () => {
     const name = `legacy-${crypto.randomUUID()}`;
     const old = new Dexie(name);
     old.version(1).stores({
@@ -155,7 +155,7 @@ describe("migrasi dan backup Ranledger 2", () => {
     expect(ledgerTotals(migrated).balance).toBe(900_000);
     validateLedger(migrated);
   });
-  it("migrasi gagal mempertahankan database v1 yang asli", async () => {
+  it("a failed migration preserves the original v1 database", async () => {
     const name = `broken-v1-${crypto.randomUUID()}`;
     const old = new Dexie(name);
     old.version(1).stores({
@@ -177,7 +177,7 @@ describe("migrasi dan backup Ranledger 2", () => {
       defaultCategories.length,
     );
   });
-  it("membaca JSON dan Excel v1 serta memindahkan saldo awal ke dompet Utama", async () => {
+  it("reads v1 JSON and Excel files and moves the opening balance to the Main wallet", async () => {
     const { walletId: _wallet, ...transaction } = sample().transactions[0];
     const legacy = {
       app: "ranledger",
@@ -236,7 +236,7 @@ describe("migrasi dan backup Ranledger 2", () => {
       ),
     ).toEqual(migrated);
   });
-  it("seluruh fitur v2 pulih identik lewat JSON dan Excel", async () => {
+  it("all v2 features round-trip identically through JSON and Excel", async () => {
     const backup = createBackup(sample(), at);
     expect(parseBackup(JSON.parse(JSON.stringify(backup)))).toEqual(backup);
     expect(await excelToBackup(await backupToExcel(backup))).toEqual(backup);
@@ -261,8 +261,8 @@ describe("migrasi dan backup Ranledger 2", () => {
     expect(Object.values(second.features)).toEqual([0, 0, 0, 0, 0]);
   });
 });
-describe("aturan saldo dan perencanaan", () => {
-  it("cakupan seluruh dompet tidak bertabrakan dengan ID dompet dari backup", () => {
+describe("balance rules and planning", () => {
+  it("all-wallet scope does not collide with wallet IDs from a backup", () => {
     const ledger = sample();
     ledger.wallets[1].id = "all";
     ledger.transactions[0].walletId = "all";
@@ -278,7 +278,7 @@ describe("aturan saldo dan perencanaan", () => {
     expect(progress.get("budget")?.spent).toBe(100_000);
     expect(progress.get("scoped")?.spent).toBe(100_000);
   });
-  it("gabung mengarahkan referensi dompet dan mempertahankan saldo serta jadwal lokal", () => {
+  it("merge remaps wallet references and preserves local balances and schedules", () => {
     const current = sample(),
       incoming = sample();
     incoming.wallets[1] = {
@@ -317,7 +317,7 @@ describe("aturan saldo dan perencanaan", () => {
     expect(plan.ledger.schedules[0].nextDate).toBe("2026-01-31");
     expect(plan.ledger.goals).toHaveLength(1);
   });
-  it("kegagalan penulisan transaksi rutin tidak memajukan jadwal", async () => {
+  it("a recurring transaction write failure does not advance the schedule", async () => {
     const db = await database();
     await db.saveEntity("schedules", sample().schedules[0], false);
     const before = await db.snapshot();
@@ -329,7 +329,7 @@ describe("aturan saldo dan perencanaan", () => {
     ).rejects.toThrow(/storage penuh/);
     expect(await db.snapshot()).toEqual(before);
   });
-  it("transfer mengubah dua dompet tetapi tidak arus kas atau saldo gabungan", () => {
+  it("a transfer changes two wallets but not cash flow or the combined balance", () => {
     const ledger = sample();
     const balances = walletBalances(ledger);
     expect(balances.get("main-wallet")).toBe(600_000);
@@ -342,7 +342,7 @@ describe("aturan saldo dan perencanaan", () => {
     ledger.transfers = [];
     expect(ledgerTotals(ledger).balance).toBe(1_100_000);
   });
-  it("anggaran memakai bulan dan cakupan dompet yang tepat", () => {
+  it("budgets use the correct month and wallet scope", () => {
     const ledger = sample();
     ledger.budgets.push({
       ...ledger.budgets[0],
@@ -363,7 +363,7 @@ describe("aturan saldo dan perencanaan", () => {
     });
     expect(progress.get("bank-budget")?.spent).toBe(0);
   });
-  it("jadwal akhir bulan dan tahun kabisat mempertahankan tanggal jangkar", () => {
+  it("month-end and leap-year schedules preserve their anchor date", () => {
     let schedule = sample().schedules[0];
     expect(nextOccurrence(schedule)).toBe("2026-02-28");
     schedule = { ...schedule, nextDate: "2026-02-28" };
@@ -376,7 +376,7 @@ describe("aturan saldo dan perencanaan", () => {
     };
     expect(nextOccurrence(schedule)).toBe("2028-02-29");
   });
-  it("mencatat atau melewati satu jadwal secara atomik dan menolak konfirmasi dari tab basi", async () => {
+  it("records or skips a schedule atomically and rejects confirmation from a stale tab", async () => {
     const db = await database();
     const schedule = sample().schedules[0];
     await db.saveEntity("schedules", schedule, false);
@@ -394,7 +394,7 @@ describe("aturan saldo dan perencanaan", () => {
     expect(ledger.transactions).toHaveLength(1);
     expect(ledger.schedules[0].nextDate).toBe("2026-03-31");
   });
-  it("menolak duplikasi anggaran, target per dompet, dan transfer ke dompet sama", () => {
+  it("rejects duplicate budgets, per-wallet goals, and transfers to the same wallet", () => {
     const ledger = sample();
     expect(() =>
       validateLedger({
@@ -415,7 +415,7 @@ describe("aturan saldo dan perencanaan", () => {
       }),
     ).toThrow(/dua dompet/);
   });
-  it("dompet terakhir tidak bisa diarsipkan dan konflik edit transfer terdeteksi", async () => {
+  it("the last wallet cannot be archived and transfer edit conflicts are detected", async () => {
     const db = await database();
     const main = (await db.snapshot()).wallets[0];
     await expect(
@@ -445,8 +445,8 @@ const mapping: CsvMapping = {
   incomeCategoryId: "salary",
   expenseCategoryId: "food",
 };
-describe("impor CSV", () => {
-  it("membaca BOM, separator, kutip ganda, baris dalam kutip, dan menolak CSV rusak", () => {
+describe("CSV import", () => {
+  it("reads BOMs, separators, escaped quotes, and quoted newlines, and rejects malformed CSV", () => {
     const data = parseCsv(
       '\uFEFFTanggal;Nominal;Catatan\r\n05/01/2026;-100000;"Makan; enak\nlagi ""ya"""',
     );
@@ -456,7 +456,7 @@ describe("impor CSV", () => {
     expect(() => parseCsv("a,a\n1,2")).toThrow(/berbeda/);
     expect(() => parseCsv('a,b\n1,"x"z')).toThrow(/kutip/);
   });
-  it("tidak menebak tanggal ambigu atau membulatkan pecahan rupiah", () => {
+  it("does not guess ambiguous dates or round fractional rupiah amounts", () => {
     expect(csvDate("01/02/2026", "dmy")).toBe("2026-02-01");
     expect(csvDate("01/02/2026", "mdy")).toBe("2026-01-02");
     expect(() => csvDate("31/02/2026", "dmy")).toThrow();
@@ -465,7 +465,7 @@ describe("impor CSV", () => {
     expect(() => csvAmount("1.500,50", "id")).toThrow();
     expect(() => csvAmount("1.5", "id")).toThrow();
   });
-  it("menandai duplikat lokal dan internal tanpa menghapus pilihan pengguna", () => {
+  it("marks local and internal duplicates without clearing the user's selections", () => {
     const data = parseCsv(
       "Tanggal;Nominal;Catatan\n05/01/2026;-100000;Makan\n06/01/2026;-20000;Baru\n06/01/2026;-20000;Baru\n31/02/2026;10;Rusak",
     );
@@ -474,7 +474,7 @@ describe("impor CSV", () => {
     expect(rows.map((r) => r.include)).toEqual([false, true, false, false]);
     expect(rows[3].error).toMatch(/Tanggal/);
   });
-  it("mengimpor debit/kredit dan mencocokkan kategori dari nama", () => {
+  it("imports debits and credits and matches categories by name", () => {
     const data = parseCsv(
       "Tanggal;Debit;Kredit;Kategori\n2026-01-01;25000;;Makan & Minum\n2026-01-02;;1500000;Gaji/Freelance",
     );
@@ -494,7 +494,7 @@ describe("impor CSV", () => {
     expect(rows.map((r) => r.transaction?.kind)).toEqual(["expense", "income"]);
     expect(rows[0].transaction?.categoryId).toBe("food");
   });
-  it("impor stale atau kegagalan penulisan membatalkan semua baris", async () => {
+  it("a stale import or write failure rolls back every row", async () => {
     const db = await database();
     const rows = buildCsvPreview(
       parseCsv("Tanggal;Nominal;Catatan\n01/01/2026;100000;Masuk"),

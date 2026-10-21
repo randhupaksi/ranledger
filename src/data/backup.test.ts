@@ -12,12 +12,12 @@ import {
 import { emptyLedger, totals } from "../domain/ledger";
 import { ledgerTotals } from "../domain/planning";
 
-describe("backup JSON dan Excel", () => {
-  it("backup Excel kosong tetap bisa dipulihkan lengkap", async () => {
+describe("JSON and Excel backups", () => {
+  it("an empty Excel backup can be fully restored", async () => {
     const backup = createBackup(emptyLedger());
     expect(await excelToBackup(await backupToExcel(backup))).toEqual(backup);
   });
-  it("memulihkan seluruh isi JSON termasuk kategori arsip, preferensi, dan saldo awal", () => {
+  it("restores all JSON data, including archived categories, preferences, and opening balances", () => {
     const example = exampleBackup();
     example.categories[0].archived = true;
     example.preferences.theme = "dark";
@@ -27,7 +27,7 @@ describe("backup JSON dan Excel", () => {
     expect(createBackup(plan.ledger, example.exportedAt)).toEqual(example);
     expect(ledgerTotals(plan.ledger).balance).toBe(2_915_000);
   });
-  it("Excel roundtrip identik bahkan catatan seperti rumus/HTML tetap teks", async () => {
+  it("Excel round-trips preserve data, including notes that resemble formulas or HTML", async () => {
     const example = exampleBackup();
     example.transactions[0].note =
       '=HYPERLINK("https://example.invalid") <img src=x onerror=alert(1)> & ü 💚';
@@ -39,7 +39,7 @@ describe("backup JSON dan Excel", () => {
     expect(book.Sheets.Transaksi.F2.f).toBeUndefined();
     expect(await excelToBackup(buffer)).toEqual(example);
   });
-  it("menggabungkan berulang tanpa duplikasi dan menjaga versi lokal yang berbeda", () => {
+  it("repeated merges avoid duplicates and preserve differing local versions", () => {
     const sample = exampleBackup();
     const first = makeImportPlan(emptyLedger(), sample, "merge");
     expect(first.added).toBe(3);
@@ -51,7 +51,7 @@ describe("backup JSON dan Excel", () => {
     expect(second.conflicts).toBe(1);
     expect(second.ledger.transactions[0].amount).toBe(9_000_000);
   });
-  it("menggabungkan kategori dengan nama sama tanpa merusak referensi", () => {
+  it("merges same-name categories without breaking references", () => {
     const sample = exampleBackup();
     sample.categories[0].id = "new-food";
     sample.transactions[1].categoryId = "new-food";
@@ -59,7 +59,7 @@ describe("backup JSON dan Excel", () => {
     expect(plan.ledger.categories.length).toBe(emptyLedger().categories.length);
     expect(plan.ledger.transactions[1].categoryId).toBe("food");
   });
-  it("menolak versi salah, field asing, nominal pecahan, kategori hilang, dan duplikat internal", () => {
+  it("rejects unsupported versions, unknown fields, fractional amounts, missing categories, and internal duplicates", () => {
     const backup = exampleBackup();
     expect(() => parseBackup({ ...backup, formatVersion: 99 })).toThrow();
     expect(() => parseBackup({ ...backup, evil: "x" })).toThrow();
@@ -77,7 +77,7 @@ describe("backup JSON dan Excel", () => {
       }),
     ).toThrow(/ganda/);
   });
-  it("menolak rumus Excel, laporan biasa, file rusak, dan file terlalu besar", async () => {
+  it("rejects Excel formulas, ordinary reports, corrupt files, and oversized files", async () => {
     const book = XLSX.read(await backupToExcel(exampleBackup()), {
       type: "array",
     });
@@ -103,7 +103,7 @@ describe("backup JSON dan Excel", () => {
       } as File),
     ).rejects.toThrow(/256 MB/);
   });
-  it("menangani 10.000 transaksi lintas tahun dengan jumlah yang konsisten", async () => {
+  it("handles 10,000 transactions across years with consistent totals", async () => {
     const ledger = emptyLedger();
     const base = exampleBackup().transactions[0];
     ledger.transactions = Array.from({ length: 10_000 }, (_, i) => ({
