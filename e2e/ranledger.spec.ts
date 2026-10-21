@@ -7,8 +7,19 @@ import {
   type Page,
 } from "@playwright/test";
 import path from "node:path";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { exampleBackup } from "../src/data/backup";
+import * as XLSX from "xlsx";
+
+function importWorkbook(rows: (string | number)[][]): Buffer {
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet(rows),
+    "Transaksi",
+  );
+  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+}
 
 const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
@@ -638,7 +649,7 @@ test("wallets, transfers, budgets, goals, schedules, reports, and backups work t
     .click();
   await expect(page).toHaveURL(/dompet/);
 });
-test("offline CSV import with preview, duplicates, invalid rows, and atomic confirmation", async ({
+test("offline Excel import with preview, duplicates, invalid rows, and atomic confirmation", async ({
   ledgerPage: page,
   ledgerContext: context,
 }) => {
@@ -649,12 +660,27 @@ test("offline CSV import with preview, duplicates, invalid rows, and atomic conf
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   await context.setOffline(true);
   await page.goto(`${origin}/impor`);
-  const csv =
-    "tanggal;jenis;nominal;kategori;catatan\n2026-01-05;pengeluaran;25000;Makan & Minum;Kopi\n2026-01-05;pengeluaran;25000;Makan & Minum;Kopi\n2026-02-31;pemasukan;1000000;Gaji/Freelance;Rusak";
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Unduh template Excel" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("ranledger-template.xlsx");
+  const templatePath = await download.path();
+  expect(templatePath).not.toBeNull();
+  const template = XLSX.read(await readFile(templatePath!), { type: "buffer" });
+  expect(template.SheetNames).toEqual(["Transaksi", "Panduan"]);
+  expect(
+    XLSX.utils.sheet_to_json(template.Sheets.Transaksi, { header: 1 })[0],
+  ).toEqual(["tanggal", "jenis", "nominal", "kategori", "catatan"]);
   await page.locator('input[type="file"]').setInputFiles({
-    name: "transaksi.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(csv),
+    name: "transaksi.xlsx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: importWorkbook([
+      ["tanggal", "jenis", "nominal", "kategori", "catatan"],
+      ["2026-01-05", "pengeluaran", 25000, "Makan & Minum", "Kopi"],
+      ["2026-01-05", "pengeluaran", 25000, "Makan & Minum", "Kopi"],
+      ["2026-02-31", "pemasukan", 1000000, "Gaji/Freelance", "Rusak"],
+    ]),
   });
   await choose(page, "Cara menentukan jenis", "Dari kolom jenis");
   await page
@@ -1057,11 +1083,14 @@ test("v3: category rules, report matching, and batch undo", async ({
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.goto(origin + "/impor");
   await page.locator('input[type="file"]').setInputFiles({
-    name: "statement.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(
-      "tanggal;jenis;nominal;kategori;catatan\n2026-01-05;pengeluaran;25000;Makan & Minum;Kopi tercatat\n2026-01-06;pengeluaran;20000;Tidak dikenal;coffee baru",
-    ),
+    name: "statement.xlsx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: importWorkbook([
+      ["tanggal", "jenis", "nominal", "kategori", "catatan"],
+      ["2026-01-05", "pengeluaran", 25000, "Makan & Minum", "Kopi tercatat"],
+      ["2026-01-06", "pengeluaran", 20000, "Tidak dikenal", "coffee baru"],
+    ]),
   });
   await choose(page, "Cara menentukan jenis", "Dari kolom jenis");
   await page
@@ -1077,7 +1106,7 @@ test("v3: category rules, report matching, and batch undo", async ({
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.goto(origin + "/rekonsiliasi");
   await expect(
-    page.locator(".v3-row").filter({ hasText: "statement.csv" }),
+    page.locator(".v3-row").filter({ hasText: "statement.xlsx" }),
   ).toContainText("1 transaksi baru · 1 dicocokkan");
   await page
     .getByRole("button", { name: "Batalkan batch", exact: true })
