@@ -27,7 +27,7 @@ function RuleEditor({
   return (
     <EditorDialog
       title={rule ? "Ubah aturan kategori" : "Aturan kategori baru"}
-      description="Aturan diterapkan pada pratinjau CSV. Riwayat yang sudah dicatat tidak diubah."
+      description="Aturan diterapkan pada pratinjau Excel. Riwayat yang sudah dicatat tidak diubah."
       onClose={onClose}
       onDelete={rule ? () => db.removeEntity("rules", rule) : undefined}
       onSave={() =>
@@ -111,10 +111,10 @@ export default function Reconciliation() {
       <PageHeading
         eyebrow="LANJUTAN ALUR IMPOR"
         title="Riwayat impor & aturan"
-        description="Tinjau transaksi dari CSV, batalkan batch yang belum berubah, dan atur kategori untuk impor berikutnya."
+        description="Tinjau transaksi dari Excel, batalkan batch yang belum berubah, dan atur kategori untuk impor berikutnya."
         action={
           <Link to="/impor" className="button primary">
-            Impor transaksi CSV
+            Impor transaksi Excel
           </Link>
         }
       />
@@ -130,10 +130,10 @@ export default function Reconciliation() {
             compact
             icon={FileUp}
             title="Belum ada riwayat impor"
-            description="Setelah file CSV diimpor, batch dan transaksi yang dicocokkan akan tercatat di sini."
+            description="Setelah file Excel diimpor, batch dan transaksi yang dicocokkan akan tercatat di sini."
             action={
               <Link to="/impor" className="button secondary small-button">
-                Impor transaksi CSV
+                Impor transaksi Excel
               </Link>
             }
           />

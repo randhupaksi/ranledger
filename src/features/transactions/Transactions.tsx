@@ -96,7 +96,7 @@ export default function Transactions({
         action={
           <>
             <Link className="button secondary" to="/impor">
-              Impor CSV
+              Impor Excel
             </Link>
             <button className="button primary" onClick={onAdd}>
               <Plus size={18} />

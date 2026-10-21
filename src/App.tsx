@@ -106,7 +106,7 @@ const navigation = [
     mobile: "Kalender",
     icon: CalendarDays,
   },
-  { to: "/impor", label: "Impor CSV", mobile: "Impor", icon: FileUp },
+  { to: "/impor", label: "Impor Excel", mobile: "Impor", icon: FileUp },
   {
     to: "/backup",
     label: "Backup & pemulihan",

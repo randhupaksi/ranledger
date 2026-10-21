@@ -15,8 +15,6 @@ export default function ImportCsv() {
     notify = useNotify();
   const [data, setData] = useState<CsvData | null>(null),
     [filename, setFilename] = useState("");
-  const [text, setText] = useState("");
-  const [delimiter, setDelimiter] = useState("");
   const [mapping, setMapping] = useState<CsvMapping>({
     date: -1,
     amount: -1,
@@ -69,7 +67,9 @@ export default function ImportCsv() {
       instance.onerror = () => {
         instance.terminate();
         worker.current = null;
-        reject(new Error("Pemrosesan CSV gagal. Coba file yang lebih kecil."));
+        reject(
+          new Error("Pemrosesan Excel gagal. Coba file yang lebih kecil."),
+        );
       };
       instance.postMessage(request);
     });
@@ -79,34 +79,40 @@ export default function ImportCsv() {
     setPreview(null);
     setSuccess(0);
   }
-  async function parseFile(
-    contents: string,
-    name: string,
-    separator = delimiter,
-  ) {
-    if (lock.current) return;
+  async function selectFile(file?: File) {
+    if (!file || lock.current) return;
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      setError("Pilih file Excel berformat .xlsx.");
+      return;
+    }
+    if (file.size > 16 * 1024 * 1024) {
+      setError("Ukuran file Excel maksimal 16 MB.");
+      return;
+    }
     lock.current = true;
     setBusy("read");
     setError("");
     setPreview(null);
     setSuccess(0);
+    setData(null);
     try {
       const parsed = await work<CsvData>({
         type: "parse",
-        text: contents,
-        delimiter: separator || undefined,
+        buffer: await file.arrayBuffer(),
       });
       setData(parsed);
-      setText(contents);
-      setFilename(name);
+      setFilename(file.name);
       const find = (pattern: RegExp) =>
         parsed.headers.findIndex((h) => pattern.test(h.trim()));
+      const kind = find(/^(jenis|kind|type)$/i);
       setMapping((old) => ({
         ...old,
         date: find(/^(tanggal|date|transaction.?date)$/i),
         amount: find(/^(nominal|amount|jumlah)$/i),
         note: find(/^(catatan|note|keterangan|description)$/i),
-        kind: find(/^(jenis|kind|type)$/i),
+        kind,
+        direction: kind >= 0 ? "column" : "expense",
+        dateFormat: "iso",
         category: find(/^(kategori|category)$/i),
         debit: find(/^(debit|debet)$/i),
         credit: find(/^(credit|kredit)$/i),
@@ -117,26 +123,8 @@ export default function ImportCsv() {
     } finally {
       lock.current = false;
       setBusy("");
+      if (fileInput.current) fileInput.current.value = "";
     }
-  }
-  async function selectFile(file?: File) {
-    if (!file || lock.current) return;
-    if (file.size > 16 * 1024 * 1024) {
-      setError("Ukuran CSV maksimal 16 MB.");
-      return;
-    }
-    try {
-      lock.current = true;
-      setBusy("read");
-      const contents = await file.text();
-      lock.current = false;
-      await parseFile(contents, file.name);
-    } catch (e) {
-      lock.current = false;
-      setBusy("");
-      setError(errorMessage(e));
-    }
-    if (fileInput.current) fileInput.current.value = "";
   }
   async function inspect() {
     if (!data || lock.current) return;
@@ -228,7 +216,6 @@ export default function ImportCsv() {
       setConfirm(false);
       setPreview(null);
       setData(null);
-      setText("");
     } catch (e) {
       setError(errorMessage(e));
       setConfirm(false);
@@ -241,7 +228,7 @@ export default function ImportCsv() {
     <>
       <PageHeading
         eyebrow="BAWA RIWAYATMU"
-        title="Impor CSV"
+        title="Impor Excel"
         description="Pindahkan transaksi dari bank atau aplikasi lain dengan pratinjau sebelum menyimpan."
       />
       <div className="v3-actions import-links">
@@ -313,7 +300,7 @@ export default function ImportCsv() {
         <div className="section-heading">
           <div>
             <h2>{filename && data ? filename : "Pilih file transaksi"}</h2>
-            <p>CSV maksimal 16 MB · 100.000 baris · diproses di perangkat</p>
+            <p>XLSX maksimal 16 MB · 100.000 baris · diproses di perangkat</p>
           </div>
           <button
             className="button secondary"
@@ -321,35 +308,39 @@ export default function ImportCsv() {
             onClick={() => fileInput.current?.click()}
           >
             <FileUp size={17} />
-            {data ? "Ganti file" : "Pilih CSV"}
+            {data ? "Ganti file" : "Pilih Excel"}
           </button>
         </div>
         <input
           ref={fileInput}
           type="file"
-          accept=".csv,text/csv"
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="sr-only"
-          aria-label="File CSV transaksi"
+          aria-label="File Excel transaksi"
           onChange={(e) => void selectFile(e.target.files?.[0])}
         />
         <div className="csv-source-foot">
           <p>
-            Baris pertama harus berisi nama kolom. File tidak diunggah ke
-            server.
+            Lembar pertama harus memiliki nama kolom di baris pertama. Ganti
+            atau hapus contoh pada template sebelum mengimpor.
           </p>
           <button
             className="text-link"
             disabled={Boolean(busy)}
             onClick={async () => {
-              const { downloadFile } = await import("../../data/backup");
+              const [{ downloadFile }, { createImportTemplate }] =
+                await Promise.all([
+                  import("../../data/backup"),
+                  import("../../data/reportExcel"),
+                ]);
               downloadFile(
-                "tanggal;jenis;nominal;kategori;catatan\n2026-01-01;pengeluaran;25000;Makan & Minum;Makan siang\n2026-01-02;pemasukan;1000000;Gaji/Freelance;Proyek",
-                "ranledger-template.csv",
-                "text/csv;charset=utf-8",
+                await createImportTemplate(),
+                "ranledger-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
               );
             }}
           >
-            Unduh template CSV
+            Unduh template Excel
           </button>
         </div>
       </section>
@@ -365,23 +356,6 @@ export default function ImportCsv() {
             </div>
           </div>
           <fieldset disabled={Boolean(busy)} className="csv-fields">
-            <div className="field">
-              <label htmlFor="csv-delimiter">Pemisah kolom</label>
-              <SelectField
-                id="csv-delimiter"
-                value={delimiter}
-                onValueChange={(v) => {
-                  setDelimiter(v);
-                  void parseFile(text, filename, v);
-                }}
-                options={[
-                  { value: "", label: "Deteksi otomatis" },
-                  { value: ";", label: "Titik koma (;)" },
-                  { value: ",", label: "Koma (,)" },
-                  { value: "\t", label: "Tab" },
-                ]}
-              />
-            </div>
             <div className="field">
               <label htmlFor="csv-date-format">Format tanggal</label>
               <SelectField
@@ -489,7 +463,7 @@ export default function ImportCsv() {
           </div>
         </section>
       )}
-      {busy === "read" && <p role="status">Membaca file CSV…</p>}
+      {busy === "read" && <p role="status">Membaca file Excel…</p>}
       {preview && (
         <section className="surface csv-preview">
           <div className="section-heading">

@@ -6,7 +6,6 @@ import {
   initialWallet,
   DEFAULT_WALLET_ID,
   localDate,
-  totals,
 } from "../domain/ledger";
 import type { Ledger, Transaction } from "../domain/ledger";
 import {
@@ -588,48 +587,14 @@ export async function exportReport(
   ledger: Ledger,
   rangeLabel: string,
 ) {
-  const XLSX = await import("xlsx");
-  const workbook = XLSX.utils.book_new();
-  const total = totals(transactions);
-  const categories = new Map(ledger.categories.map((c) => [c.id, c.name]));
-  const wallets = new Map(ledger.wallets.map((w) => [w.id, w.name]));
-  const rows = [
-    ["Laporan transaksi Ranledger — bukan file backup"],
-    [rangeLabel],
-    ["Pemasukan", total.income],
-    ["Pengeluaran", total.expense],
-    ["Selisih", total.net],
-    [],
-    ["Tanggal", "Jenis", "Kategori", "Catatan", "Nominal (IDR)", "Dompet"],
-    ...transactions.map((t) => [
-      t.date,
-      t.refund
-        ? "Refund pengeluaran"
-        : t.kind === "income"
-          ? "Pemasukan"
-          : "Pengeluaran",
-      categories.get(t.categoryId),
-      t.note,
-      t.amount,
-      wallets.get(t.walletId),
-    ]),
-  ];
-  const sheet = XLSX.utils.aoa_to_sheet(rows);
-  sheet["!cols"] = [
-    { wch: 18 },
-    { wch: 20 },
-    { wch: 25 },
-    { wch: 50 },
-    { wch: 22 },
-    { wch: 26 },
-  ];
-  XLSX.utils.book_append_sheet(workbook, sheet, "Laporan");
+  const { createStyledReportWorkbook } = await import("./reportExcel");
+  const workbook = await createStyledReportWorkbook(
+    transactions,
+    ledger,
+    rangeLabel,
+  );
   downloadFile(
-    XLSX.write(workbook, {
-      type: "array",
-      bookType: "xlsx",
-      compression: true,
-    }) as ArrayBuffer,
+    workbook,
     "ranledger-laporan-" + localDate() + ".xlsx",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );

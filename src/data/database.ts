@@ -547,7 +547,7 @@ export class LedgerDatabase extends Dexie {
   async importTransactions(
     rows: Transaction[],
     expectedRevision: number,
-    batchName = "Impor CSV",
+    batchName = "Impor Excel",
     matches: { line: number; transactionId: string }[] = [],
   ) {
     const { validateLedger } = await import("../domain/validation");
@@ -555,7 +555,7 @@ export class LedgerDatabase extends Dexie {
       const current = await this.snapshot();
       if (current.revision !== expectedRevision)
         throw new Error(
-          "Data berubah. Perbarui pratinjau CSV sebelum mengimpor.",
+          "Data berubah. Perbarui pratinjau Excel sebelum mengimpor.",
         );
       const activeWallets = new Set(
         current.wallets.filter((w) => !w.archived).map((w) => w.id),
@@ -568,9 +568,9 @@ export class LedgerDatabase extends Dexie {
           throw new Error("Transaksi pencocokan sudah tidak tersedia.");
       for (const row of rows) {
         if (!activeWallets.has(row.walletId))
-          throw new Error("Pilih dompet aktif untuk impor CSV.");
+          throw new Error("Pilih dompet aktif untuk impor Excel.");
         if (!activeCategories.has(row.categoryId))
-          throw new Error("Pilih kategori aktif untuk impor CSV.");
+          throw new Error("Pilih kategori aktif untuk impor Excel.");
       }
       validateLedger({
         ...current,
