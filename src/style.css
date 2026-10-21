@@ -3648,9 +3648,6 @@ select {
   height: 2px;
   background: transparent;
 }
-.summary-item:first-child::before {
-  left: 0;
-}
 .summary-item:hover {
   background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
 }
@@ -3794,9 +3791,6 @@ select {
     left: 17px;
     right: 0;
     top: -1px;
-  }
-  .summary-item:first-child::before {
-    left: 0;
   }
   .summary-item:nth-child(3)::before {
     left: 0;

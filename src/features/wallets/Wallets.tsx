@@ -349,7 +349,7 @@ export default function Wallets() {
                   onClick={() => setWalletEditor("new")}
                 >
                   <Plus size={15} />
-                  Tambah dompet
+                  Tambah dompet kedua
                 </button>
               ) : undefined
             }

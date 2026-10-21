@@ -464,7 +464,7 @@ async function choose(page: Page, label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
-test("v2: wallets, transfers, budgets, goals, schedules, reports, and backups work together", async ({
+test("wallets, transfers, budgets, goals, schedules, reports, and backups work together", async ({
   ledgerPage: page,
 }) => {
   await mkdir(path.join(process.cwd(), ".cache", "screenshots"), {
@@ -638,7 +638,7 @@ test("v2: wallets, transfers, budgets, goals, schedules, reports, and backups wo
     .click();
   await expect(page).toHaveURL(/dompet/);
 });
-test("v2: offline CSV import with preview, duplicates, invalid rows, and atomic confirmation", async ({
+test("offline CSV import with preview, duplicates, invalid rows, and atomic confirmation", async ({
   ledgerPage: page,
   ledgerContext: context,
 }) => {
