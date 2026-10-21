@@ -833,7 +833,7 @@ select {
   min-width: 0;
 }
 .summary-item:first-child {
-  padding-left: 0;
+  padding-left: 24px;
   border-left: 0;
 }
 .summary-label {
@@ -3377,6 +3377,9 @@ select {
     padding-left: 17px;
     padding-right: 0;
   }
+  .summary-item:first-child {
+    padding-left: 17px;
+  }
   .period-summary > .summary-item:nth-child(2) {
     border-left: 0;
   }
@@ -3997,5 +4000,10 @@ input[type="radio"]:hover {
   .radix-select-trigger:not([data-disabled]):active,
   select:not(:disabled):active {
     transform: none;
+  }
+}
+@media (max-width: 380px) {
+  .summary-item:first-child {
+    padding-left: 8px;
   }
 }
