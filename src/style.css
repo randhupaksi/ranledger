@@ -1522,6 +1522,7 @@ select {
   display: flex;
   gap: 10px;
   align-items: center;
+  padding-inline: 12px;
   border-bottom: 2px solid var(--line);
 }
 .amount-input > span {
