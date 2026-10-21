@@ -3725,7 +3725,7 @@ select {
   background: var(--income);
 }
 .net-summary.negative::before {
-  background: var(--expense);
+  background: var(--warning);
 }
 .net-summary.neutral::before {
   background: var(--muted);
@@ -3740,7 +3740,10 @@ select {
   color: var(--income);
 }
 .net-summary.negative .summary-label {
-  color: var(--expense);
+  color: var(--warning);
+}
+.net-summary.negative > strong {
+  color: var(--warning);
 }
 .kind-icon.income {
   color: var(--income);

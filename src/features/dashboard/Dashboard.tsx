@@ -1,5 +1,6 @@
 import {
   ArrowDownLeft,
+  ArrowDownUp,
   ArrowRight,
   ArrowUpRight,
   Eye,
@@ -149,30 +150,6 @@ export default function Dashboard({
           </Link>
         </aside>
       </section>
-      <Suspense fallback={null}>
-        <FinancialBriefing />
-      </Suspense>
-      {!ledger.preferences.onboarded && (
-        <div className="welcome-note">
-          <ShieldCheck size={21} />
-          <p>
-            <strong>Selamat datang di Ranledger.</strong> Mulai dari satu
-            catatan, periksa ruang aktif sebelum mencatat, dan buat backup untuk
-            menjaga salinannya.
-          </p>
-          <button
-            className="text-link"
-            onClick={() =>
-              void db
-                .updatePreferences({ onboarded: true })
-                .catch((e) => notify(errorMessage(e), true))
-            }
-          >
-            Mengerti <ArrowRight size={14} aria-hidden="true" />
-          </button>
-        </div>
-      )}
-      <PlanningOverview />
       <div className="section-heading period-heading">
         <div>
           <h2>Ringkasan periode</h2>
@@ -214,7 +191,10 @@ export default function Dashboard({
           to={`/laporan?${query}`}
           className={`summary-item net-summary ${netTone}`}
         >
-          <span className="summary-label">Selisih periode</span>
+          <span className="summary-label">
+            <ArrowDownUp size={14} />
+            Selisih periode
+          </span>
           <strong className={netTone}>
             {summary.net > 0 ? "+" : ""}
             {money(summary.net, hidden)}
@@ -222,6 +202,30 @@ export default function Dashboard({
           <span>Pemasukan dikurangi pengeluaran</span>
         </Link>
       </section>
+      {!ledger.preferences.onboarded && (
+        <div className="welcome-note">
+          <ShieldCheck size={21} />
+          <p>
+            <strong>Selamat datang di Ranledger.</strong> Mulai dari satu
+            catatan, periksa ruang aktif sebelum mencatat, dan buat backup untuk
+            menjaga salinannya.
+          </p>
+          <button
+            className="text-link"
+            onClick={() =>
+              void db
+                .updatePreferences({ onboarded: true })
+                .catch((e) => notify(errorMessage(e), true))
+            }
+          >
+            Mengerti <ArrowRight size={14} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <PlanningOverview />
+      <Suspense fallback={null}>
+        <FinancialBriefing />
+      </Suspense>
       <div className="dashboard-columns">
         <section className="surface recent-section">
           <div className="section-heading">
