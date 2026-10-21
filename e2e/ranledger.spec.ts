@@ -155,10 +155,11 @@ test("guest entry: opening balance, edits, deletion, filtering, and persistence"
   await expect(
     page.getByRole("heading", { name: "Mulai dari satu catatan", exact: true }),
   ).toBeVisible();
-  await page.goto(`${origin}/pengaturan`);
-  await page.getByLabel("Saldo sebelum transaksi pertama (Rp)").fill("500000");
-  await page.getByRole("button", { name: "Simpan saldo awal" }).click();
-  await expectStatusMessage(page, "Saldo awal tersimpan");
+  await page.goto(`${origin}/dompet`);
+  await page.getByRole("button", { name: "Ubah dompet Utama" }).click();
+  await page.getByLabel("Saldo awal dompet (Rp)").fill("500000");
+  await page.getByRole("button", { name: "Simpan dompet" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.goto(`${origin}/`);
   await add(page, "2500000", "Proyek website", true);
   await add(page, "35000", "Makan siang <img src=x onerror=alert(1)>");
