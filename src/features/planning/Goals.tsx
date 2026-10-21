@@ -2,9 +2,9 @@ import { EditorDialog } from "../../components/EditorDialog";
 import { DatePicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, Target } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
-import { PageHeading } from "../../components/ui";
+import { EmptyState, PageHeading } from "../../components/ui";
 import {
   AmountField,
   PlanningTabs,
@@ -207,25 +207,25 @@ export default function Goals() {
             );
           })
         ) : (
-          <div className="quiet-empty planning-empty">
-            <h2>
-              {archived
-                ? "Belum ada target arsip"
-                : "Punya tujuan untuk uangmu?"}
-            </h2>
-            <p>
-              Dana darurat, pendidikan, atau perjalanan. Mulai dengan dompet
-              khusus dan nominal yang ingin dicapai.
-            </p>
-            {!archived && (
-              <button
-                className="button secondary"
-                onClick={() => setEditor("new")}
-              >
-                Buat target pertama
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={Target}
+            title={archived ? "Belum ada target arsip" : "Tentukan tujuanmu"}
+            description={
+              archived
+                ? "Target yang selesai atau diarsipkan akan tersimpan di sini."
+                : "Dana darurat, pendidikan, atau perjalanan. Tentukan nominal yang ingin kamu capai."
+            }
+            action={
+              !archived && (
+                <button
+                  className="button primary"
+                  onClick={() => setEditor("new")}
+                >
+                  Buat target pertama
+                </button>
+              )
+            }
+          />
         )}
       </section>
       <p className="page-footnote">

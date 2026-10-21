@@ -6,6 +6,7 @@ import { TouchPressFeedback } from "./components/TouchPressFeedback";
 import "./style.css";
 import "./style-v2.css";
 import "./style-v3.css";
+import "./style-personality.css";
 import { restoreSelection } from "./data/cloud";
 restoreSelection();
 

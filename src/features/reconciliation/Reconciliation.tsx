@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { FileUp } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
 import { EditorDialog } from "../../components/EditorDialog";
-import { PageHeading } from "../../components/ui";
+import { EmptyState, PageHeading } from "../../components/ui";
 import { SelectField } from "../../components/SelectField";
 import { db } from "../../data/database";
 import type { CategoryRule, ImportBatch } from "../../domain/ledger";
@@ -125,10 +126,17 @@ export default function Reconciliation() {
           satu transaksi impor sudah diubah atau dihapus.
         </p>
         {!batches.length ? (
-          <div className="v3-empty">
-            <h3>Belum ada batch impor</h3>
-            <p>Riwayat dan pencocokan akan muncul setelah CSV dikonfirmasi.</p>
-          </div>
+          <EmptyState
+            compact
+            icon={FileUp}
+            title="Belum ada riwayat impor"
+            description="Setelah file CSV diimpor, batch dan transaksi yang dicocokkan akan tercatat di sini."
+            action={
+              <Link to="/impor" className="button secondary small-button">
+                Impor transaksi CSV
+              </Link>
+            }
+          />
         ) : (
           <div className="v3-register">
             {batches.map((batch) => (

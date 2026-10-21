@@ -1,10 +1,10 @@
 import { EditorDialog } from "../../components/EditorDialog";
 import { DatePicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, ArrowRight, Plus } from "lucide-react";
+import { Archive, ArrowLeftRight, ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { useLedger } from "../../components/LedgerProvider";
-import { PageHeading, Pagination } from "../../components/ui";
+import { EmptyState, PageHeading, Pagination } from "../../components/ui";
 import { AmountField, WalletPicker } from "../../components/planning-ui";
 import { SelectField } from "../../components/SelectField";
 import { db } from "../../data/database";
@@ -215,6 +215,7 @@ export default function Wallets() {
   );
   const wallets = ledger.wallets.filter((w) => w.archived === archived);
   const pages = Math.min(page, Math.max(1, Math.ceil(transfers.length / 30)));
+  const activeWalletCount = ledger.wallets.filter((w) => !w.archived).length;
   const hidden = ledger.preferences.hideAmounts;
   const names = new Map(ledger.wallets.map((w) => [w.id, w.name]));
   return (
@@ -285,10 +286,12 @@ export default function Wallets() {
             </button>
           ))
         ) : (
-          <div className="quiet-empty">
-            <p>Belum ada dompet yang diarsipkan.</p>
-            <span>Dompet arsip tetap menyimpan riwayat dan saldonya.</span>
-          </div>
+          <EmptyState
+            compact
+            icon={Archive}
+            title="Belum ada dompet arsip"
+            description="Dompet yang diarsipkan akan tetap menyimpan riwayat dan saldonya."
+          />
         )}
       </section>
       <section className="surface transfer-register">
@@ -330,14 +333,27 @@ export default function Wallets() {
             </button>
           ))
         ) : (
-          <div className="quiet-empty">
-            <p>Belum ada transfer.</p>
-            <span>
-              {ledger.wallets.filter((w) => !w.archived).length < 2
+          <EmptyState
+            compact
+            icon={ArrowLeftRight}
+            title="Belum ada transfer"
+            description={
+              ledger.wallets.filter((w) => !w.archived).length < 2
                 ? "Tambahkan satu dompet lagi untuk memindahkan uang."
-                : "Pindahkan uang antar dompet tanpa mengubah total keuanganmu."}
-            </span>
-          </div>
+                : "Pindahkan uang antar dompet tanpa mengubah total keuanganmu."
+            }
+            action={
+              activeWalletCount < 2 ? (
+                <button
+                  className="button secondary small-button"
+                  onClick={() => setWalletEditor("new")}
+                >
+                  <Plus size={15} />
+                  Tambah dompet
+                </button>
+              ) : undefined
+            }
+          />
         )}
         {transfers.length > 0 && (
           <Pagination

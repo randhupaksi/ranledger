@@ -2,9 +2,9 @@ import { EditorDialog } from "../../components/EditorDialog";
 import { MonthPicker } from "../../components/DatePicker";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, PieChart, Plus } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
-import { PageHeading } from "../../components/ui";
+import { EmptyState, PageHeading } from "../../components/ui";
 import {
   AmountField,
   ProgressMeter,
@@ -251,19 +251,20 @@ export default function Budgets() {
             );
           })
         ) : (
-          <div className="quiet-empty planning-empty">
-            <h2>Rencanakan bulan ini</h2>
-            <p>
-              Mulai dari kategori yang paling sering kamu gunakan, seperti makan
-              atau transportasi.
-            </p>
-            <button
-              className="button secondary"
-              onClick={() => setEditor("new")}
-            >
-              Buat anggaran pertama
-            </button>
-          </div>
+          <EmptyState
+            icon={PieChart}
+            tone="warning"
+            title="Atur batas untuk bulan ini"
+            description="Pilih kategori yang ingin kamu kendalikan, seperti makan atau transportasi."
+            action={
+              <button
+                className="button primary"
+                onClick={() => setEditor("new")}
+              >
+                Buat anggaran pertama
+              </button>
+            }
+          />
         )}
       </section>
       <p className="page-footnote">

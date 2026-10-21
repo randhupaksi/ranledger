@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Plus,
+  Search,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { SelectField } from "./SelectField";
 import { DatePicker } from "./DatePicker";
@@ -84,56 +86,76 @@ export function EmptyState({
   onClear,
   title,
   description,
+  icon: Icon,
+  tone = "brand",
+  compact = false,
+  action,
 }: {
   filtered?: boolean;
   onAdd?: () => void;
   onClear?: () => void;
   title?: string;
   description?: string;
+  icon?: LucideIcon;
+  tone?: "brand" | "income" | "expense" | "warning";
+  compact?: boolean;
+  action?: ReactNode;
 }) {
+  const EmptyIcon = Icon ?? (filtered ? Search : undefined);
   return (
-    <div className="empty-state">
-      <svg
-        className="empty-art"
-        viewBox="0 0 160 110"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path d="M23 86h114" stroke="var(--line)" />
-        <rect
-          x="47"
-          y="15"
-          width="70"
-          height="78"
-          rx="5"
-          fill="var(--surface)"
-          stroke="var(--line)"
-          transform="rotate(8 47 15)"
-        />
-        <rect
-          x="39"
-          y="11"
-          width="70"
-          height="78"
-          rx="5"
-          fill="var(--surface)"
-          stroke="var(--brand)"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M51 31h45M51 43h24M51 56h45M51 68h29"
-          stroke="var(--line)"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <circle cx="111" cy="75" r="16" fill="var(--brand)" />
-        <path
-          d="M105 75h12m-6-6v12"
-          stroke="var(--on-brand)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
+    <div
+      className={`empty-state${compact ? " empty-state--compact" : ""}`}
+      data-tone={tone}
+    >
+      {EmptyIcon ? (
+        <div className="empty-state-artwork" aria-hidden="true">
+          <span className="empty-state-glyph">
+            <EmptyIcon size={26} strokeWidth={1.7} />
+          </span>
+        </div>
+      ) : (
+        <svg
+          className="empty-art"
+          viewBox="0 0 160 110"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M23 86h114" stroke="var(--line)" />
+          <rect
+            x="47"
+            y="15"
+            width="70"
+            height="78"
+            rx="5"
+            fill="var(--surface)"
+            stroke="var(--line)"
+            transform="rotate(8 47 15)"
+          />
+          <rect
+            x="39"
+            y="11"
+            width="70"
+            height="78"
+            rx="5"
+            fill="var(--surface)"
+            stroke="var(--brand)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M51 31h45M51 43h24M51 56h45M51 68h29"
+            stroke="var(--line)"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle cx="111" cy="75" r="16" fill="var(--brand)" />
+          <path
+            d="M105 75h12m-6-6v12"
+            stroke="var(--on-brand)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
       <h3>
         {title ??
           (filtered
@@ -146,16 +168,21 @@ export function EmptyState({
             ? "Coba periode lain atau sederhanakan pencarianmu."
             : "Makan siang, bensin, atau pemasukan hari ini. Catat di sini, supaya mudah diingat nanti.")}
       </p>
-      {onAdd && (
-        <button className="button primary" onClick={onAdd}>
-          <Plus size={17} />
-          Catat transaksi pertama
-        </button>
-      )}
-      {onClear && (
-        <button className="button secondary" onClick={onClear}>
-          Hapus filter
-        </button>
+      {(action || onAdd || onClear) && (
+        <div className="empty-state-actions">
+          {action}
+          {onAdd && (
+            <button className="button primary" onClick={onAdd}>
+              <Plus size={17} />
+              {filtered ? "Catat transaksi" : "Catat transaksi pertama"}
+            </button>
+          )}
+          {onClear && (
+            <button className="button secondary" onClick={onClear}>
+              Hapus filter
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -431,10 +458,13 @@ export function CategoryBreakdown({
   );
   if (!breakdown.length)
     return (
-      <div className="quiet-empty">
-        <p>Belum ada pengeluaran di periode ini.</p>
-        <span>Rincian kategori akan muncul setelah kamu mulai mencatat.</span>
-      </div>
+      <EmptyState
+        compact
+        icon={ArrowUpRight}
+        tone="expense"
+        title="Belum ada pengeluaran"
+        description="Rincian kategori akan muncul setelah kamu mencatat pengeluaran di periode ini."
+      />
     );
   return (
     <div className="category-breakdown">

@@ -1,0 +1,331 @@
+/* Give each financial task a distinct visual rhythm within the ledger palette. */
+.main-content {
+  --page-accent: var(--brand);
+  --page-wash: var(--brand-soft);
+}
+
+.main-content:is(
+  [data-page="transaksi"],
+  [data-page="impor"],
+  [data-page="rekonsiliasi"]
+) {
+  --page-accent: var(--income);
+  --page-wash: var(--income-soft);
+}
+
+.main-content:is(
+  [data-page="anggaran"],
+  [data-page="rencana"],
+  [data-page="kalender"]
+) {
+  --page-accent: var(--warning);
+  --page-wash: var(--warning-soft);
+}
+
+.main-content:is([data-page="kewajiban"]) {
+  --page-accent: var(--expense);
+  --page-wash: var(--expense-soft);
+}
+
+.main-content > .page-heading {
+  align-items: flex-end;
+  gap: 24px;
+  padding: 5px 0 26px;
+  margin-bottom: 30px;
+}
+
+.main-content > .page-heading .eyebrow {
+  color: var(--page-accent);
+  letter-spacing: 0.15em;
+}
+
+.main-content > .page-heading h1 {
+  font-size: clamp(29px, 3vw, 38px);
+  letter-spacing: -0.04em;
+}
+
+.main-content > .page-heading .page-description {
+  font-size: 13px;
+}
+
+/* A compact ledger toolbar keeps transaction discovery distinct from analysis. */
+.transactions-surface .filter-toolbar {
+  background: color-mix(in srgb, var(--page-wash) 48%, var(--surface));
+}
+
+.filtered-summary {
+  background: color-mix(in srgb, var(--page-wash) 32%, var(--surface));
+}
+
+/* Financial totals and forecasts are the natural focal point of these pages. */
+.ledger-statement,
+.v3-forecast {
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, var(--line));
+  border-radius: var(--radius);
+  background: linear-gradient(115deg, var(--brand-soft), var(--surface) 78%);
+}
+
+.ledger-statement span,
+.v3-forecast .eyebrow {
+  color: var(--page-accent);
+  font-weight: 650;
+}
+
+.ledger-statement strong,
+.v3-forecast h2 {
+  letter-spacing: -0.045em;
+}
+
+.v3-forecast {
+  margin: 20px 0 8px;
+}
+
+.forecast-chart {
+  color: var(--page-accent);
+}
+
+.main-content:is([data-page="kewajiban"], [data-page="ruang"]) .v3-statement {
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--page-accent) 25%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--page-wash) 45%, var(--surface));
+}
+
+.main-content[data-page="kewajiban"] .v3-statement .eyebrow {
+  color: var(--page-accent);
+}
+
+/* The planning pages use an inset period strip and readable progress rows. */
+.planning-toolbar {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--page-wash) 36%, var(--surface));
+}
+
+.plan-overview h2 {
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+
+.schedule-date {
+  color: var(--page-accent);
+}
+
+.budget-line,
+.goal-line {
+  transition: background-color 160ms ease;
+}
+
+.budget-line:hover,
+.goal-line:hover {
+  background: color-mix(in srgb, var(--page-wash) 28%, var(--surface));
+}
+
+.budget-figures strong,
+.goal-figures strong {
+  font-size: 18px;
+}
+
+/* Reports emphasize the selected scope before presenting detailed figures. */
+.report-period {
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--brand-soft) 45%, var(--surface));
+}
+
+.report-period h2 {
+  font-size: 18px;
+}
+
+/* File and account workflows benefit from a clear start point. */
+.csv-source {
+  border-color: color-mix(in srgb, var(--page-accent) 30%, var(--line));
+  background: color-mix(in srgb, var(--page-wash) 25%, var(--surface));
+}
+
+.main-content[data-page="backup"] .backup-export {
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 25%, var(--surface));
+}
+
+.main-content[data-page="pengaturan"] .settings-description h2 {
+  font-size: 18px;
+  letter-spacing: -0.025em;
+}
+
+.import-steps .current {
+  color: var(--page-accent);
+}
+
+.main-content:is(
+    [data-page="rekonsiliasi"],
+    [data-page="ruang"],
+    [data-page="backup"]
+  )
+  .v3-section
+  h2 {
+  letter-spacing: -0.025em;
+}
+
+/* Empty states share one rhythm while their icons and copy stay task-specific. */
+.empty-state {
+  --empty-accent: var(--brand);
+  --empty-wash: var(--brand-soft);
+  min-width: 0;
+  padding: 34px 24px 38px;
+}
+
+.empty-state[data-tone="income"] {
+  --empty-accent: var(--income);
+  --empty-wash: var(--income-soft);
+}
+
+.empty-state[data-tone="expense"] {
+  --empty-accent: var(--expense);
+  --empty-wash: var(--expense-soft);
+}
+
+.empty-state[data-tone="warning"] {
+  --empty-accent: var(--warning);
+  --empty-wash: var(--warning-soft);
+}
+
+.empty-state::before {
+  background: var(--empty-accent);
+}
+
+.empty-state-artwork {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 135px;
+  height: 96px;
+  margin-bottom: 13px;
+}
+
+.empty-state-glyph {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 1px solid color-mix(in srgb, var(--empty-accent) 42%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--empty-wash) 80%, var(--surface));
+  color: var(--empty-accent);
+  transform: rotate(-4deg);
+}
+
+.empty-state-artwork::after {
+  content: "";
+  position: absolute;
+  top: 17px;
+  right: 31px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--empty-accent);
+}
+
+.empty-state h3 {
+  max-width: 36ch;
+}
+
+.empty-state > p {
+  margin-bottom: 18px;
+}
+
+.empty-state-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.empty-state-actions .button + .button {
+  margin-top: 0;
+}
+
+.empty-state--compact {
+  min-height: 176px;
+  padding: 24px 20px 28px;
+}
+
+.empty-state--compact::before {
+  margin-bottom: 10px;
+}
+
+.empty-state--compact .empty-state-artwork,
+.empty-state--compact .empty-art {
+  width: 78px;
+  height: 58px;
+  margin-bottom: 8px;
+}
+
+.empty-state--compact .empty-state-glyph {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.empty-state--compact .empty-state-glyph svg {
+  width: 21px;
+  height: 21px;
+}
+
+.empty-state--compact .empty-state-artwork::after {
+  top: 1px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+}
+
+.empty-state--compact > p {
+  max-width: 42ch;
+  margin: 6px 0 12px;
+}
+
+.empty-state--compact h3 {
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .main-content > .page-heading {
+    align-items: flex-start;
+    padding-bottom: 22px;
+  }
+
+  .main-content > .page-heading h1 {
+    font-size: 29px;
+  }
+
+  .ledger-statement,
+  .v3-forecast {
+    padding: 22px 18px;
+  }
+
+  .planning-toolbar,
+  .report-period {
+    padding: 16px;
+  }
+
+  .empty-state {
+    padding: 28px 18px 30px;
+  }
+
+  .empty-state--compact {
+    min-height: 160px;
+    padding: 20px 14px 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-line,
+  .goal-line {
+    transition: none;
+  }
+}

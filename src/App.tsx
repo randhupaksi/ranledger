@@ -346,7 +346,12 @@ function Shell() {
             <Link to="/ruang">Selesaikan konflik</Link>
           </div>
         )}
-        <main id="main-content" className="main-content" tabIndex={-1}>
+        <main
+          id="main-content"
+          className="main-content"
+          data-page={location.pathname.split("/")[1] || "beranda"}
+          tabIndex={-1}
+        >
           <Suspense
             fallback={
               <div className="route-loading" role="status">

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarClock, WalletCards } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
+import { EmptyState } from "../../components/ui";
 import { ProgressMeter } from "../../components/planning-ui";
 import { dateLabel, localDate, money } from "../../domain/ledger";
 import { budgetProgresses, walletBalances } from "../../domain/planning";
@@ -96,14 +97,19 @@ export default function PlanningOverview() {
                 );
               })
           ) : (
-            <div className="brief-empty">
-              <p>Belum ada batas pengeluaran.</p>
-              <span>Mulai dari satu kategori yang ingin kamu kendalikan.</span>
-              <Link className="text-link" to="/anggaran">
-                Buat anggaran pertama{" "}
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
+            <EmptyState
+              compact
+              icon={WalletCards}
+              tone="warning"
+              title="Belum ada batas pengeluaran"
+              description="Mulai dari satu kategori yang ingin kamu kendalikan."
+              action={
+                <Link className="text-link" to="/anggaran">
+                  Buat anggaran pertama{" "}
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              }
+            />
           )}
         </div>
         <div className="planning-overview-column">
@@ -133,13 +139,17 @@ export default function PlanningOverview() {
               </Link>
             ))
           ) : (
-            <div className="brief-empty">
-              <p>Tidak ada jadwal rutin.</p>
-              <span>Susun gaji, tagihan, atau langgananmu di sini.</span>
-              <Link className="text-link" to="/rencana">
-                Tambah jadwal <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
+            <EmptyState
+              compact
+              icon={CalendarClock}
+              title="Belum ada jadwal rutin"
+              description="Susun gaji, tagihan, atau langganan yang ingin kamu ingat."
+              action={
+                <Link className="text-link" to="/rencana">
+                  Tambah jadwal <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              }
+            />
           )}
         </div>
       </section>

@@ -1,10 +1,10 @@
 import { EditorDialog } from "../../components/EditorDialog";
 import { DatePicker } from "../../components/DatePicker";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { CalendarClock, Plus } from "lucide-react";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
 import { Modal } from "../../components/Modal";
-import { PageHeading, ErrorNotice } from "../../components/ui";
+import { EmptyState, PageHeading, ErrorNotice } from "../../components/ui";
 import {
   AmountField,
   PlanningTabs,
@@ -340,25 +340,25 @@ export default function Schedules() {
             </div>
           ))
         ) : (
-          <div className="quiet-empty planning-empty">
-            <h2>
-              {paused
-                ? "Tidak ada jadwal yang dijeda"
-                : "Mulai dari tagihan yang rutin"}
-            </h2>
-            <p>
-              Gaji, internet, sewa, atau langganan. Kamu tetap memutuskan kapan
-              catatannya masuk.
-            </p>
-            {!paused && (
-              <button
-                className="button secondary"
-                onClick={() => setEditor("new")}
-              >
-                Buat jadwal pertama
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={CalendarClock}
+            title={paused ? "Belum ada jadwal yang dijeda" : "Ingat yang rutin"}
+            description={
+              paused
+                ? "Jadwal yang dijeda atau selesai akan tersimpan di sini."
+                : "Susun gaji, internet, sewa, atau langganan. Kamu tetap memutuskan kapan catatannya masuk."
+            }
+            action={
+              !paused && (
+                <button
+                  className="button primary"
+                  onClick={() => setEditor("new")}
+                >
+                  Buat jadwal pertama
+                </button>
+              )
+            }
+          />
         )}
       </section>
       <p className="page-footnote">

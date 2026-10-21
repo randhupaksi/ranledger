@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
+import { CalendarDays } from "lucide-react";
 import { useLedger, useNotify } from "../../components/LedgerProvider";
-import { PageHeading, Pagination, ErrorNotice } from "../../components/ui";
+import {
+  EmptyState,
+  PageHeading,
+  Pagination,
+  ErrorNotice,
+} from "../../components/ui";
 import { SelectField } from "../../components/SelectField";
 import { AmountField } from "../../components/planning-ui";
 import { DatePicker } from "../../components/DatePicker";
@@ -344,16 +350,21 @@ export default function Calendar() {
         {selectedDay && <h3>Agenda {dateLabel(selectedDay)}</h3>}
         {!items.filter((item) => !selectedDay || item.date === selectedDay)
           .length ? (
-          <div className="v3-empty">
-            <h3>Belum ada agenda dalam periode ini</h3>
-            <p>
-              Tambahkan jadwal rutin atau atur pembayaran kewajiban agar
-              proyeksi lebih lengkap.
-            </p>
-            <Link to="/rencana" className="text-link">
-              Atur transaksi rutin
-            </Link>
-          </div>
+          <EmptyState
+            compact
+            icon={CalendarDays}
+            title={
+              selectedDay
+                ? "Tidak ada agenda pada tanggal ini"
+                : "Belum ada agenda mendatang"
+            }
+            description="Jadwal rutin, jatuh tempo, dan transaksi mendatang akan muncul di sini."
+            action={
+              <Link to="/rencana" className="button secondary small-button">
+                Atur transaksi rutin
+              </Link>
+            }
+          />
         ) : (
           <>
             <div className="v3-register">

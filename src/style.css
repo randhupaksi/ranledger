@@ -1065,18 +1065,6 @@ select {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.quiet-empty {
-  padding: 35px 24px 45px;
-  color: var(--muted);
-  font-size: 11px;
-}
-.quiet-empty span {
-  display: block;
-  margin-top: 8px;
-  font-size: 10px;
-  max-width: 230px;
-  line-height: 1.7;
-}
 .spending-insight {
   margin: 0 22px 20px;
   font-size: 10px;
@@ -2627,9 +2615,6 @@ select {
   .category-bar-heading strong {
     font-size: 11px;
   }
-  .spending-section .quiet-empty {
-    padding-top: 15px;
-  }
   .backup-reminder {
     padding: 16px;
     gap: 12px;
@@ -3627,10 +3612,6 @@ select {
 }
 .planning-overview-column .section-heading {
   border-bottom: 0;
-}
-.brief-empty {
-  border-left: 2px solid var(--brand);
-  padding-left: 13px;
 }
 .brief-budget,
 .brief-schedule {

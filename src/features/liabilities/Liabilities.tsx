@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
+import { Landmark } from "lucide-react";
 import { useLedger } from "../../components/LedgerProvider";
-import { PageHeading } from "../../components/ui";
+import { EmptyState, PageHeading } from "../../components/ui";
 import { EditorDialog } from "../../components/EditorDialog";
 import { DatePicker } from "../../components/DatePicker";
 import { AmountField } from "../../components/planning-ui";
@@ -268,13 +269,17 @@ export default function Liabilities() {
         </p>
       </section>
       {!wallets.length ? (
-        <div className="v3-empty">
-          <h2>Mulai dari kewajiban yang ingin dipantau</h2>
-          <p>
-            Tambahkan kartu kredit, PayLater, atau pinjaman melalui jenis akun.
-            Masukkan sisa utang sebagai utang awal.
-          </p>
-        </div>
+        <EmptyState
+          icon={Landmark}
+          tone="expense"
+          title="Belum ada tagihan atau cicilan"
+          description="Tambahkan kartu kredit, PayLater, atau pinjaman untuk memantau sisa kewajiban dan jadwal pembayarannya."
+          action={
+            <button className="button primary" onClick={() => setAdding(true)}>
+              Tambah kewajiban
+            </button>
+          }
+        />
       ) : (
         <div className="v3-register">
           {wallets.map((w) => {

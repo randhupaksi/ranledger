@@ -515,15 +515,6 @@
   color: var(--muted);
   font-size: 13px;
 }
-.v3-empty {
-  padding: 38px 0;
-  max-width: 65ch;
-  color: var(--muted);
-}
-.v3-empty h2,
-.v3-empty h3 {
-  color: var(--ink);
-}
 .v3-access-banner {
   background: var(--warning-soft);
   color: var(--warning);
