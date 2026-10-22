@@ -85,13 +85,14 @@ Batas file impor adalah 256 MB untuk JSON dan 32 MB untuk Excel, dengan batas ba
 | `src/domain/planning.ts` | Saldo dompet, progres anggaran dan kejadian jadwal |
 | `src/data/database.ts` | Penyimpanan Dexie, operasi atomik, konflik antar-tab |
 | `src/data/backup.ts` | Format v3, kompatibilitas v1/v2, Excel/JSON, perencanaan impor dan unduhan |
+| `src/data/reportExcel.ts`, `src/data/report-excel/` | Penyusunan workbook laporan, definisi gaya Excel, dan transformasi XML lembar kerja |
 | `src/data/csv.ts`, `csv.worker.ts` | Parser, pemetaan, deteksi duplikat dan worker impor CSV |
 | `src/domain/finance.ts`, `forecast.ts`, `sync.ts` | Jurnal, posisi aset/kewajiban, kalender, proyeksi, dan penggabungan konflik |
 | `src/data/cloud.tsx`, `encrypted-backup.ts` | Aktivasi cloud, antrean persisten, transport bertahap, serta enkripsi backup |
 | `server`, `api` | API Hono, autentikasi, otorisasi ruang, PostgreSQL/PGlite, dan adaptor Vercel |
 | `src/components` | Konteks data, dialog aksesibel dan pola tampilan bersama |
 | `src/features` | Beranda, transaksi, laporan, backup dan pengaturan |
-| `src/style.css` | Token terang/gelap, tampilan halaman dan responsivitas |
+| `src/styles/` | Token terang/gelap, tampilan halaman dan responsivitas; urutan impor di `src/main.tsx` menjaga prioritas aturan CSS |
 | `src/**/*.test.ts` | Pengujian domain, file backup dan kegagalan penyimpanan |
 | `e2e/ranledger.spec.ts` | Alur browser terpisah, offline dan screenshot |
 
