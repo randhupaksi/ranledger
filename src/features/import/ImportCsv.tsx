@@ -321,8 +321,8 @@ export default function ImportCsv() {
         />
         <div className="csv-source-foot">
           <p>
-            Lembar pertama harus memiliki nama kolom di baris pertama. Ganti
-            atau hapus contoh pada template sebelum mengimpor.
+            Judul kolom dikenali otomatis pada lembar pertama, termasuk setelah
+            header template. Ganti atau hapus baris contoh sebelum mengimpor.
           </p>
           <button
             className="text-link"

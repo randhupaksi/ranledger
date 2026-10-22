@@ -669,14 +669,20 @@ test("offline Excel import with preview, duplicates, invalid rows, and atomic co
   const template = XLSX.read(await readFile(templatePath!), { type: "buffer" });
   expect(template.SheetNames).toEqual(["Transaksi", "Panduan"]);
   expect(
-    XLSX.utils.sheet_to_json(template.Sheets.Transaksi, { header: 1 })[0],
-  ).toEqual(["tanggal", "jenis", "nominal", "kategori", "catatan"]);
+    XLSX.utils.sheet_to_json(template.Sheets.Transaksi, { header: 1 })[6],
+  ).toEqual(["Tanggal", "Jenis", "Nominal", "Kategori", "Catatan"]);
   await page.locator('input[type="file"]').setInputFiles({
     name: "transaksi.xlsx",
     mimeType:
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     buffer: importWorkbook([
-      ["tanggal", "jenis", "nominal", "kategori", "catatan"],
+      ["RANLEDGER  /  KEUANGAN PRIBADI"],
+      ["Template Impor Transaksi"],
+      ["Tambahkan riwayat transaksi, lalu impor file ini ke Ranledger."],
+      ["FORMAT TANGGAL  YYYY-MM-DD  ·  NOMINAL RUPIAH UTUH"],
+      ["Ganti atau hapus contoh sebelum mengimpor."],
+      ["DATA TRANSAKSI"],
+      ["Tanggal", "Jenis", "Nominal", "Kategori", "Catatan"],
       ["2026-01-05", "pengeluaran", 25000, "Makan & Minum", "Kopi"],
       ["2026-01-05", "pengeluaran", 25000, "Makan & Minum", "Kopi"],
       ["2026-02-31", "pemasukan", 1000000, "Gaji/Freelance", "Rusak"],
@@ -690,10 +696,10 @@ test("offline Excel import with preview, duplicates, invalid rows, and atomic co
     "1 dipilih · 1 kemungkinan duplikat · 1 baris tidak valid",
   );
   await expect(
-    page.getByLabel("Impor baris 3", { exact: true }),
+    page.getByLabel("Impor baris 9", { exact: true }),
   ).not.toBeChecked();
   await expect(
-    page.getByLabel("Impor baris 4", { exact: true }),
+    page.getByLabel("Impor baris 10", { exact: true }),
   ).toBeDisabled();
   await page.screenshot({
     path: ".cache/screenshots/v2-csv-desktop.png",

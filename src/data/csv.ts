@@ -5,6 +5,7 @@ export interface CsvData {
   headers: string[];
   rows: string[][];
   delimiter: string;
+  headerLine?: number;
 }
 export interface CsvMapping {
   date: number;
@@ -195,7 +196,7 @@ export function buildCsvPreview(
   return data.rows.map((cells, index) => {
     try {
       if (cells.length !== data.headers.length)
-        throw new Error("Jumlah kolom baris berbeda dari judul CSV.");
+        throw new Error("Jumlah kolom baris berbeda dari judul kolom.");
       const get = (col: number) => (col >= 0 ? (cells[col] ?? "").trim() : "");
       const date = csvDate(get(mapping.date), mapping.dateFormat);
       let kind: TransactionKind = "expense",
@@ -279,7 +280,7 @@ export function buildCsvPreview(
       const duplicate = fingerprints.has(fingerprint);
       fingerprints.add(fingerprint);
       return {
-        line: index + 2,
+        line: index + (data.headerLine ?? 1) + 1,
         transaction,
         error: "",
         duplicate,
@@ -291,7 +292,7 @@ export function buildCsvPreview(
       };
     } catch (e) {
       return {
-        line: index + 2,
+        line: index + (data.headerLine ?? 1) + 1,
         transaction: null,
         error: e instanceof Error ? e.message : "Baris tidak valid.",
         duplicate: false,
