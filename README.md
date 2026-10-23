@@ -4,6 +4,12 @@ Aplikasi keuangan pribadi berbahasa Indonesia dengan pencatatan lokal, dukungan 
 
 Versi **3.0.0** menambahkan akun dan ruang bersama, sinkronisasi antarperangkat, kartu kredit/PayLater/pinjaman, jurnal seimbang, kalender dan simulasi arus kas, rekonsiliasi CSV, serta backup terenkripsi. Baca [panduan implementasi v3](docs/ranledger-3.0.md) dan [kontrak API](docs/api-v3.md). [Panduan 2.0](docs/ranledger-2.0.md) menjelaskan perilaku versi sebelumnya.
 
+## Dokumentasi
+
+Mulai dari [indeks dokumentasi](docs/INDEX.md) untuk menemukan panduan yang sesuai. Dokumentasi
+tersebut mencakup arsitektur, model data dan aturan finansial, sistem desain, operasi/privasi,
+pengujian, serta panduan kerja untuk AI agent dan kontributor.
+
 ## Menjalankan aplikasi
 
 Gunakan Node.js **24 LTS** (sesuai `.nvmrc`) dan npm. Dependency dikunci dengan versi exact dan `package-lock.json`.
